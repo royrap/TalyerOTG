@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to RoadAid</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #e63946;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 15px;
+            background: #e63946;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+        }
+        h2 {
+            color: #e63946;
+            margin: 0;
+            font-size: 28px;
+        }
+        .account-details {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .account-details ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .account-details li {
+            margin: 8px 0;
+            font-weight: 500;
+        }
+        .download-section {
+            text-align: center;
+            margin: 25px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 8px;
+        }
+        .download-link {
+            display: inline-block;
+            padding: 12px 25px;
+            background: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            margin: 10px 0;
+            transition: background 0.3s ease;
+        }
+        .download-link:hover {
+            background: #218838;
+        }
+        .confirmation-section {
+            text-align: center;
+            margin: 30px 0;
+            padding: 25px;
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border-radius: 8px;
+            border-left: 4px solid #ffc107;
+        }
+        .confirm-button {
+            display: inline-block;
+            padding: 15px 30px;
+            background: #e63946;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 15px 0;
+            transition: background 0.3s ease;
+        }
+        .confirm-button:hover {
+            background: #d32f2f;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            color: #6c757d;
+            font-style: italic;
+        }
+        .warning {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #ffc107;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        hr {
+            border: none;
+            height: 1px;
+            background: #dee2e6;
+            margin: 25px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🚗</div>
+            <h2>Welcome to RoadAid 🚗</h2>
+        </div>
+
+        <p><strong>Hi {{ .User.Email }},</strong></p>
+
+        <p>Thank you for signing up to <strong>RoadAid</strong>! 🎉</p>
+
+        <div class="account-details">
+            <p><strong>Here are your account details:</strong></p>
+            <ul>
+                <li><strong>Email:</strong> {{ .User.Email }}</li>
+                <li><strong>Password:</strong> (hidden for security)</li>
+                <li><strong>Account Type:</strong> {{ .User.UserType }}</li>
+                <li><strong>Registration Date:</strong> {{ .User.CreatedAt }}</li>
+            </ul>
+        </div>
+
+        <div class="download-section">
+            <p><strong>📱 Get the RoadAid mobile app for the best experience:</strong></p>
+            <a href="{{ .AppDownloadLink }}" class="download-link">📲 Download RoadAid App</a>
+            <p><small>Available for Android and iOS devices</small></p>
+        </div>
+
+        <hr>
+
+        <div class="confirmation-section">
+            <p><strong>🔐 Before you can start, please confirm your account:</strong></p>
+            <a href="{{ .ConfirmationURL }}" class="confirm-button">✅ Confirm Your Account</a>
+            <p><small>This link will expire in 24 hours for security reasons</small></p>
+        </div>
+
+        <div class="warning">
+            <p><strong>⚠️ Important:</strong> If you didn't sign up for RoadAid, you can safely ignore this email. Your account will not be activated without email confirmation.</p>
+        </div>
+
+        <div class="footer">
+            <p>🛠️ Need help? Contact our support team</p>
+            <p>– The RoadAid Team</p>
+            <p><small>This is an automated email. Please do not reply directly to this message.</small></p>
+        </div>
+    </div>
+</body>
+</html>

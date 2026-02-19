@@ -1,0 +1,332 @@
+// RoadAid DBML - Optimized Layout (Minimal Line Crossings)
+// Paste this into dbdiagram.io
+
+// ============================================
+// GROUP 1: CORE USER & AUTH
+// ============================================
+
+Table user_profiles {
+  id uuid [pk]
+  first_name varchar [not null]
+  last_name varchar [not null]
+  email varchar [not null, unique]
+  phone_number varchar [not null]
+  profile_image_url text
+  status varchar [default: 'active']
+  user_type varchar [default: 'customer']
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+  current_latitude numeric
+  current_longitude numeric
+  is_available boolean [default: true]
+  shop_id uuid
+  rating numeric [default: 0.0]
+  total_reviews int [default: 0]
+}
+
+Table user_locations {
+  id uuid [pk]
+  user_id uuid
+  latitude numeric [not null]
+  longitude numeric [not null]
+  address text
+  created_at timestamptz [default: `now()`]
+}
+
+Table notifications {
+  id uuid [pk]
+  user_id uuid
+  title varchar
+  body text
+  type varchar
+  read boolean [default: false]
+  created_at timestamptz [default: `now()`]
+}
+
+Table vehicles {
+  id uuid [pk]
+  user_id uuid [not null]
+  brand_name varchar [not null]
+  model_name varchar [not null]
+  year int [not null]
+  color varchar
+  plate_number varchar
+  is_primary boolean [default: false]
+  vehicle_type varchar [default: 'car']
+}
+
+Table talyer_owner_verifications {
+  id uuid [pk]
+  user_id uuid [not null, unique]
+  business_name varchar [not null]
+  business_permit_url text [not null]
+  valid_id_url text [not null]
+  status varchar [default: 'pending']
+  reviewed_by uuid
+  created_at timestamptz [default: `now()`]
+}
+
+// ============================================
+// GROUP 2: SHOPS & SERVICES
+// ============================================
+
+Table shops {
+  id uuid [pk]
+  owner_id uuid [not null, unique]
+  shop_name varchar [not null]
+  is_active boolean [default: true]
+  operating_hours jsonb
+  current_status varchar [default: 'closed']
+  shop_address text
+  shop_phone text
+  latitude numeric
+  longitude numeric
+  service_radius numeric [default: 500.0]
+  rating numeric [default: 0.00]
+  total_reviews int [default: 0]
+}
+
+Table service_categories {
+  id uuid [pk]
+  name varchar [not null, unique]
+  description text
+  base_price numeric
+  estimated_duration int
+  category_type varchar [default: 'standard']
+  is_active boolean [default: true]
+}
+
+Table shop_services {
+  id uuid [pk]
+  shop_id uuid [not null]
+  category_id uuid
+  service_name text [not null]
+  base_price numeric [default: 0.00]
+  custom_price numeric
+  estimated_duration int [default: 30]
+  is_active boolean [default: true]
+  availability_status varchar [default: 'available']
+}
+
+Table shop_mechanics {
+  id uuid [pk]
+  shop_id uuid [not null]
+  mechanic_id uuid [not null]
+  role varchar [default: 'mechanic']
+  specialties text[]
+  hourly_rate numeric
+  is_active boolean [default: true]
+  joined_at timestamptz [default: `now()`]
+}
+
+// ============================================
+// GROUP 3: SERVICE PROVIDERS & AVAILABILITY
+// ============================================
+
+Table service_providers {
+  id uuid [pk]
+  user_id uuid [not null, unique]
+  company_name varchar
+  talyer_owner_id uuid
+  shop_id uuid
+  rating numeric [default: 0.00]
+  is_verified boolean [default: false]
+  is_available boolean [default: true]
+  current_latitude numeric
+  current_longitude numeric
+  status varchar [default: 'offline']
+  created_at timestamptz [default: `now()`]
+}
+
+Table mechanic_availability_status {
+  id uuid [pk]
+  mechanic_id uuid [not null, unique]
+  shop_id uuid
+  current_status varchar [default: 'available']
+  current_request_id uuid
+  location_latitude numeric
+  location_longitude numeric
+  is_accepting_requests boolean [default: true]
+  last_active_at timestamptz [default: `now()`]
+}
+
+// ============================================
+// GROUP 4: SERVICE REQUESTS & ROUTING
+// ============================================
+
+Table service_requests {
+  id uuid [pk]
+  customer_id uuid [not null]
+  provider_id uuid
+  vehicle_id uuid
+  category_id uuid
+  title varchar [not null]
+  description text
+  status varchar [default: 'pending']
+  pickup_latitude numeric [not null]
+  pickup_longitude numeric [not null]
+  estimated_price numeric
+  final_price numeric
+  payment_status varchar [default: 'pending']
+  created_at timestamptz [default: `now()`]
+  shop_id uuid
+  assigned_mechanic_id uuid
+  platform_fee_percentage numeric [default: 10.0]
+  platform_fee_amount numeric
+  talyer_net_amount numeric
+  mechanic_earnings numeric [default: 0.00]
+  shop_earnings numeric [default: 0.00]
+}
+
+Table request_status_history {
+  id uuid [pk]
+  request_id uuid [not null]
+  status varchar [not null]
+  notes text
+  created_at timestamptz [default: `now()`]
+}
+
+Table request_broadcasts {
+  id uuid [pk]
+  request_id uuid [not null]
+  provider_id uuid [not null]
+  provider_type varchar [not null]
+  shop_id uuid
+  mechanic_id uuid
+  distance_km numeric [not null]
+  notification_sent_at timestamptz [default: `now()`]
+  response_status varchar [default: 'pending']
+  is_eligible boolean [default: true]
+  created_at timestamptz [default: `now()`]
+}
+
+Table request_routing {
+  id uuid [pk]
+  request_id uuid [not null]
+  eligible_mechanic_id uuid
+  eligible_shop_id uuid
+  routing_type varchar [not null]
+  is_notified boolean [default: false]
+  distance_km double
+  created_at timestamptz [default: `now()`]
+}
+
+Table inspection_reports {
+  id uuid [pk]
+  request_id uuid [not null]
+  provider_id uuid [not null]
+  report_data jsonb [not null]
+  created_at timestamptz [default: `now()`]
+}
+
+// ============================================
+// GROUP 5: PAYMENTS & INVOICES
+// ============================================
+
+Table invoices {
+  id uuid [pk]
+  request_id uuid [not null]
+  customer_id uuid [not null]
+  talyer_owner_id uuid [not null]
+  mechanic_id uuid
+  invoice_number text [not null, unique]
+  subtotal numeric [not null]
+  platform_fee numeric [default: 0.00]
+  total_amount numeric [not null]
+  talyer_net_amount numeric [not null]
+  status varchar [default: 'generated']
+  generated_at timestamptz [default: `now()`]
+  items jsonb [default: '[]']
+  provider_net_amount numeric [default: 0.00]
+  tax numeric [default: 0.00]
+  available_payment_methods jsonb
+  selected_payment_method text
+  requires_cash_verification boolean [default: false]
+}
+
+Table payments {
+  id uuid [pk]
+  request_id uuid [not null]
+  customer_id uuid [not null]
+  provider_id uuid [not null]
+  amount numeric [not null]
+  platform_fee numeric [default: 0.00]
+  provider_amount numeric [not null]
+  payment_method varchar
+  payment_gateway varchar
+  transaction_id varchar
+  status varchar [default: 'pending']
+  created_at timestamptz [default: `now()`]
+  invoice_id uuid
+}
+
+// ============================================
+// REFERENCES - Grouped by source table
+// ============================================
+
+// User Profiles references
+Ref: user_profiles.shop_id > shops.id
+
+// User-related tables
+Ref: user_locations.user_id > user_profiles.id
+Ref: notifications.user_id > user_profiles.id
+Ref: vehicles.user_id > user_profiles.id
+Ref: talyer_owner_verifications.user_id > user_profiles.id
+Ref: talyer_owner_verifications.reviewed_by > user_profiles.id
+
+// Shops references
+Ref: shops.owner_id > user_profiles.id
+
+// Shop Services & Mechanics
+Ref: shop_services.shop_id > shops.id
+Ref: shop_services.category_id > service_categories.id
+Ref: shop_mechanics.shop_id > shops.id
+Ref: shop_mechanics.mechanic_id > user_profiles.id
+
+// Service Providers
+Ref: service_providers.user_id > user_profiles.id
+Ref: service_providers.talyer_owner_id > user_profiles.id
+Ref: service_providers.shop_id > shops.id
+
+// Mechanic Availability
+Ref: mechanic_availability_status.mechanic_id > user_profiles.id
+Ref: mechanic_availability_status.shop_id > shops.id
+Ref: mechanic_availability_status.current_request_id > service_requests.id
+
+// Service Requests
+Ref: service_requests.customer_id > user_profiles.id
+Ref: service_requests.provider_id > service_providers.id
+Ref: service_requests.vehicle_id > vehicles.id
+Ref: service_requests.category_id > service_categories.id
+Ref: service_requests.shop_id > shops.id
+Ref: service_requests.assigned_mechanic_id > user_profiles.id
+
+// Request History & Status
+Ref: request_status_history.request_id > service_requests.id
+
+// Request Broadcasts
+Ref: request_broadcasts.request_id > service_requests.id
+Ref: request_broadcasts.provider_id > service_providers.id
+Ref: request_broadcasts.shop_id > shops.id
+Ref: request_broadcasts.mechanic_id > user_profiles.id
+
+// Request Routing
+Ref: request_routing.request_id > service_requests.id
+Ref: request_routing.eligible_mechanic_id > user_profiles.id
+Ref: request_routing.eligible_shop_id > shops.id
+
+// Inspection Reports
+Ref: inspection_reports.request_id > service_requests.id
+Ref: inspection_reports.provider_id > service_providers.id
+
+// Invoices
+Ref: invoices.request_id > service_requests.id
+Ref: invoices.customer_id > user_profiles.id
+Ref: invoices.talyer_owner_id > user_profiles.id
+Ref: invoices.mechanic_id > user_profiles.id
+
+// Payments
+Ref: payments.request_id > service_requests.id
+Ref: payments.customer_id > user_profiles.id
+Ref: payments.provider_id > service_providers.id
+Ref: payments.invoice_id > invoices.id

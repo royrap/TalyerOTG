@@ -1,0 +1,1298 @@
+import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../main.dart';
+import 'payment_methods_screen.dart';
+import '../services/user_data_service.dart';
+import '../services/pricing_service.dart';
+import '../services/supabase_service.dart';
+import '../screens/paymongo_qr_payment_screen.dart';
+import '../models/invoice.dart';
+
+class PaymentScreen extends StatefulWidget {
+  final String? issueType;
+  final String? issueDescription;
+  final String? issueTitle;
+  final String? vehicleType;
+  final String? vehicleBrand;
+  final String? vehicleModel;
+  final String? vehicleYear;
+  final String? vehicleId;
+  final String? serviceRequestId;
+
+  const PaymentScreen({
+    Key? key,
+    this.issueType,
+    this.issueDescription,
+    this.issueTitle,
+    this.vehicleType,
+    this.vehicleBrand,
+    this.vehicleModel,
+    this.vehicleYear,
+    this.vehicleId,
+    this.serviceRequestId,
+  }) : super(key: key);
+
+  @override
+  State<PaymentScreen> createState() => _PaymentScreenState();
+}
+
+class _PaymentScreenState extends State<PaymentScreen> {
+  String? _selectedPaymentMethod;
+  bool _isProcessing = false;
+  final TextEditingController _phoneController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  
+  // Pricing calculation variables
+  final PricingService _pricingService = PricingService();
+  LatLng? _customerLocation;
+  LatLng? _mechanicLocation;
+  double? _serviceFee;
+  double? _totalAmount;
+  bool _isLoadingPricing = true;
+  
+  // Updated to hold both default and saved payment methods
+  List<Map<String, dynamic>> _paymentMethods = [];
+  bool _isLoadingPaymentMethods = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // Add listener to phone controller to update button state
+    _phoneController.addListener(() {
+      setState(() {
+        // This will trigger a rebuild to update button state
+      });
+    });
+    
+    // Load saved payment methods and location data
+    _loadPaymentMethods();
+    _loadLocationDataAndCalculatePricing();
+  }
+
+  /// Load payment methods from database and combine with default options
+  Future<void> _loadPaymentMethods() async {
+    try {
+      setState(() {
+        _isLoadingPaymentMethods = true;
+      });
+
+      // Get saved payment methods from database
+      List<Map<String, dynamic>> savedMethods = [];
+      try {
+        savedMethods = await UserDataService.getPaymentMethods();
+        print('📋 Loaded ${savedMethods.length} saved payment methods');
+      } catch (e) {
+        print('⚠️ Could not load saved payment methods: $e');
+        savedMethods = [];
+      }
+
+      // Create default payment methods with proper structure
+      final List<Map<String, dynamic>> defaultMethods = [
+        {
+          'id': 'gcash_default',
+          'method_type': 'gcash',
+          'display_name': 'GCash',
+          'icon': Icons.account_balance_wallet,
+          'color': Colors.blue,
+          'requiresPhone': true,
+          'is_saved': false,
+        },
+        {
+          'id': 'paymaya_default',
+          'method_type': 'paymaya', 
+          'display_name': 'PayMaya',
+          'icon': Icons.payment,
+          'color': Colors.orange,
+          'requiresPhone': true,
+          'is_saved': false,
+        },
+        {
+          'id': 'cash_default',
+          'method_type': 'cash',
+          'display_name': 'Cash on Service',
+          'icon': Icons.money,
+          'color': Colors.green,
+          'requiresPhone': false,
+          'is_saved': false,
+        },
+      ];
+
+      // Process saved payment methods to add missing properties
+      final List<Map<String, dynamic>> processedSavedMethods = savedMethods.map((method) {
+        final methodType = method['method_type'] ?? '';
+        
+        // Add display properties based on method type
+        IconData icon;
+        Color color;
+        bool requiresPhone;
+        String displayName;
+
+        switch (methodType.toLowerCase()) {
+          case 'gcash':
+            icon = Icons.account_balance_wallet;
+            color = Colors.blue;
+            requiresPhone = false; // Already saved, no need to enter again
+            displayName = 'GCash (${_formatSavedNumber(method['gcash_number'])})';
+            break;
+          case 'paymaya':
+            icon = Icons.payment;
+            color = Colors.orange;
+            requiresPhone = false; // Already saved, no need to enter again
+            displayName = 'PayMaya (${_formatSavedNumber(method['paymaya_number'])})';
+            break;
+          case 'credit_card':
+          case 'debit_card':
+            icon = Icons.credit_card;
+            color = Colors.purple;
+            requiresPhone = false;
+            final lastFour = method['card_last_four'] ?? '****';
+            displayName = '${method['display_name'] ?? 'Card'} ••••$lastFour';
+            break;
+          default:
+            icon = Icons.payment;
+            color = Colors.grey;
+            requiresPhone = false;
+            displayName = method['display_name'] ?? 'Payment Method';
+        }
+
+        return {
+          ...method,
+          'icon': icon,
+          'color': color,
+          'requiresPhone': requiresPhone,
+          'display_name': displayName,
+          'is_saved': true,
+        };
+      }).toList();
+
+      // Combine saved methods with default methods, prioritizing saved methods
+      setState(() {
+        _paymentMethods = [...processedSavedMethods, ...defaultMethods];
+        _isLoadingPaymentMethods = false;
+      });
+
+      print('✅ Payment methods loaded: ${_paymentMethods.length} total (${processedSavedMethods.length} saved, ${defaultMethods.length} default)');
+
+    } catch (e) {
+      print('❌ Error loading payment methods: $e');
+      
+      // Fallback to default methods only
+      setState(() {
+        _paymentMethods = [
+          {
+            'id': 'gcash_default',
+            'method_type': 'gcash',
+            'display_name': 'GCash',
+            'icon': Icons.account_balance_wallet,
+            'color': Colors.blue,
+            'requiresPhone': true,
+            'is_saved': false,
+          },
+          {
+            'id': 'paymaya_default',
+            'method_type': 'paymaya',
+            'display_name': 'PayMaya',
+            'icon': Icons.payment,
+            'color': Colors.orange,
+            'requiresPhone': true,
+            'is_saved': false,
+          },
+          {
+            'id': 'cash_default',
+            'method_type': 'cash',
+            'display_name': 'Cash on Service',
+            'icon': Icons.money,
+            'color': Colors.green,
+            'requiresPhone': false,
+            'is_saved': false,
+          },
+        ];
+        _isLoadingPaymentMethods = false;
+      });
+    }
+  }
+
+  /// Format saved phone numbers for display (show last 4 digits)
+  String _formatSavedNumber(String? number) {
+    if (number == null || number.isEmpty) return 'Not set';
+    if (number.length <= 4) return number;
+    return '••••${number.substring(number.length - 4)}';
+  }
+
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'Payment',
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      body: Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            // Progress bar
+            Container(
+              width: double.infinity,
+              height: 8,
+              color: Colors.grey[200],
+              child: Row(
+                children: [
+                  Container(
+                    width: MediaQuery.of(context).size.width,
+                    height: 8,
+                    color: const Color.fromARGB(255, 176, 12, 1),
+                  ),
+                ],
+              ),
+            ),
+
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Service Summary Card
+                    _buildServiceSummaryCard(),
+                    
+                    const SizedBox(height: 24),
+                    
+                    // Mechanic Assigned Section
+                    _buildMechanicAssignedSection(),
+                    
+                    const SizedBox(height: 24),
+                    
+                    // Payment Methods Section
+                    _buildPaymentMethodsSection(),
+                    
+                    // Phone number input (shown when GCash or PayMaya is selected)
+                    if (_selectedPaymentMethod != null && 
+                        _getSelectedMethodRequiresPhone()) ...[
+                      const SizedBox(height: 20),
+                      _buildPhoneNumberInput(),
+                    ],
+                      const SizedBox(height: 24),
+                    
+                    // Total Amount Card
+                    _buildTotalAmountCard(),
+                    
+                    const SizedBox(height: 16),
+                    
+                    // Payment Cancellation Note
+                    _buildPaymentCancellationNote(),
+                  ],
+                ),
+              ),
+            ),
+
+            // Confirm Button
+            _buildConfirmButton(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildServiceSummaryCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Service Summary',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[800],
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildSummaryRow('Service Type', widget.issueTitle ?? 'General Service'),
+          _buildSummaryRow('Vehicle', '${widget.vehicleBrand ?? ''} ${widget.vehicleModel ?? ''} ${widget.vehicleYear ?? ''}'.trim()),
+          _buildSummaryRow('Description', widget.issueDescription ?? 'No description provided'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMechanicAssignedSection() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(255, 232, 245, 233),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color.fromARGB(255, 76, 175, 80),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: const BoxDecoration(
+              color: Color.fromARGB(255, 76, 175, 80),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.check,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Mechanic Assigned!',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromARGB(255, 27, 94, 32),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'A qualified mechanic has accepted your request. Complete payment to confirm the service.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[700],
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentMethodsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Text(
+              'Select Payment Method',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            if (_isLoadingPaymentMethods) ...[
+              const SizedBox(width: 12),
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Color.fromARGB(255, 176, 12, 1),
+                ),
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 16),
+        
+        if (_isLoadingPaymentMethods)
+          // Loading state
+          Container(
+            padding: const EdgeInsets.all(32),
+            child: const Center(
+              child: Column(
+                children: [
+                  CircularProgressIndicator(
+                    color: Color.fromARGB(255, 176, 12, 1),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Loading payment methods...',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else if (_paymentMethods.isEmpty)
+          // Empty state
+          Container(
+            padding: const EdgeInsets.all(32),
+            child: const Center(
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.payment,
+                    size: 48,
+                    color: Colors.grey,
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'No payment methods available',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          // Payment methods list
+          ...List.generate(_paymentMethods.length, (index) {
+            final method = _paymentMethods[index];
+            final isSelected = _selectedPaymentMethod == method['id'];
+            final isSaved = method['is_saved'] ?? false;
+            
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: InkWell(
+                onTap: () {
+                  setState(() {
+                    _selectedPaymentMethod = method['id'];
+                    _phoneController.clear(); // Clear phone when changing method
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected 
+                          ? method['color']
+                          : Colors.grey[300]!,
+                      width: isSelected ? 2 : 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      // Payment method icon
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: method['color'].withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          method['icon'],
+                          color: method['color'],
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      
+                      // Payment method details
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    method['display_name'],
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                                if (isSaved)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green[50],
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: Colors.green[200]!),
+                                    ),
+                                    child: const Text(
+                                      'Saved',
+                                      style: TextStyle(
+                                        color: Colors.green,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _getPaymentMethodDescription(method),
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      // Selection indicator
+                      if (isSelected)
+                        Icon(
+                          Icons.check_circle,
+                          color: method['color'],
+                          size: 24,
+                        )
+                      else
+                        Icon(
+                          Icons.radio_button_unchecked,
+                          color: Colors.grey[400],
+                          size: 24,
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }),
+        
+        // Add payment method button (if not loading)
+        if (!_isLoadingPaymentMethods && _paymentMethods.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          TextButton.icon(
+            onPressed: _showAddPaymentMethodDialog,
+            icon: const Icon(
+              Icons.add,
+              color: Color.fromARGB(255, 176, 12, 1),
+            ),
+            label: const Text(
+              'Add Payment Method',
+              style: TextStyle(
+                color: Color.fromARGB(255, 176, 12, 1),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  String _getPaymentMethodDescription(Map<String, dynamic> method) {
+    final methodType = method['method_type'] ?? '';
+    final isSaved = method['is_saved'] ?? false;
+    
+    if (isSaved) {
+      return 'Saved payment method';
+    }
+    
+    switch (methodType.toLowerCase()) {
+      case 'gcash':
+        return 'Pay with your GCash wallet via PayMongo';
+      case 'paymaya':
+        return 'Pay with your PayMaya wallet via PayMongo';
+      case 'cash':
+        return 'Pay the mechanic directly';
+      case 'credit_card':
+      case 'debit_card':
+        return 'Pay with your card via PayMongo';
+      default:
+        return 'Payment via PayMongo';
+    }
+  }
+
+  void _showAddPaymentMethodDialog() async {
+    // Navigate to payment methods screen for adding new payment methods
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const PaymentMethodsScreen(),
+      ),
+    );
+    
+    // Reload payment methods if the user added a new one
+    if (result == true) {
+      _loadPaymentMethods();
+    }
+  }
+
+  Widget _buildPhoneNumberInput() {
+    final selectedMethod = _paymentMethods.firstWhere(
+      (method) => method['id'] == _selectedPaymentMethod,
+    );
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: selectedMethod['color'].withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: selectedMethod['color'].withOpacity(0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                selectedMethod['icon'],
+                color: selectedMethod['color'],
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${selectedMethod['display_name']} Phone Number',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: selectedMethod['color'],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: _phoneController,
+            keyboardType: TextInputType.phone,
+            decoration: InputDecoration(
+              hintText: 'Enter your ${selectedMethod['display_name']} phone number',
+              prefixText: '+63 ',
+              prefixIcon: const Icon(Icons.phone),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: selectedMethod['color']),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey[300]!),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: selectedMethod['color']),
+              ),
+              filled: true,
+              fillColor: Colors.white,
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter your ${selectedMethod['display_name']} phone number';
+              }
+              // Remove non-numeric characters and check length
+              String phoneDigits = value.replaceAll(RegExp(r'[^0-9]'), '');
+              if (phoneDigits.length < 9 || phoneDigits.length > 11) {
+                return 'Please enter a valid phone number (9-11 digits)';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Make sure this is the phone number linked to your ${selectedMethod['display_name']} account.',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }  Widget _buildTotalAmountCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(255, 248, 249, 250),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: _isLoadingPricing
+          ? const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: CircularProgressIndicator(
+                  color: Color.fromARGB(255, 176, 12, 1),
+                ),
+              ),
+            )
+          : Column(
+              children: [                // Distance information (if available)
+                if (_customerLocation != null && _mechanicLocation != null) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.straighten,
+                            size: 16,
+                            color: Colors.grey[600],
+                          ),
+                          const SizedBox(width: 4),
+                          const Text(
+                            'Distance',
+                            style: TextStyle(fontSize: 14, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        '${_pricingService.getPricingBreakdown(customerLocation: _customerLocation!, mechanicLocation: _mechanicLocation!)['distance_km'].toStringAsFixed(1)} km',
+                        style: const TextStyle(fontSize: 14, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Rate (₱500 per 10km)',
+                        style: TextStyle(fontSize: 14, color: Colors.grey),
+                      ),
+                      Text(
+                        '${_pricingService.getPricingBreakdown(customerLocation: _customerLocation!, mechanicLocation: _mechanicLocation!)['segments']} segments',
+                        style: const TextStyle(fontSize: 14, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Service Fee',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    Text(
+                      '₱${_serviceFee?.toStringAsFixed(2) ?? '500.00'}',
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Payment Processing Fee',
+                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                    Text(
+                      '₱15.00',
+                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                  ],
+                ),
+                const Divider(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Total Amount',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      '₱${_totalAmount?.toStringAsFixed(2) ?? '515.00'}',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color.fromARGB(255, 176, 12, 1),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildPaymentCancellationNote() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.orange[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.orange[200]!),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.warning_amber,
+            color: Colors.orange[700],
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Payment Cancellation Policy',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.orange[800],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Once payment is completed, cancellation requests are not refundable. Please ensure all details are correct before proceeding.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.orange[700],
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConfirmButton() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: _isProcessing ? null : _canProceedWithPayment() ? _handleConfirmPayment : null,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color.fromARGB(255, 176, 12, 1),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            elevation: 0,
+          ),
+          child: _isProcessing
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )              : Text(
+                  'Pay ₱${_totalAmount?.toStringAsFixed(2) ?? '515.00'}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+        ),
+      ),
+    );
+  }
+
+  bool _getSelectedMethodRequiresPhone() {
+    if (_selectedPaymentMethod == null) return false;
+    final method = _paymentMethods.firstWhere(
+      (method) => method['id'] == _selectedPaymentMethod,
+      orElse: () => {},
+    );
+    return method['requiresPhone'] == true;
+  }
+
+  bool _canProceedWithPayment() {
+    if (_selectedPaymentMethod == null) {
+      print('❌ No payment method selected');
+      return false;
+    }
+    
+    if (_getSelectedMethodRequiresPhone()) {
+      // More flexible phone validation - allow 9-11 digits
+      String phoneText = _phoneController.text.replaceAll(RegExp(r'[^0-9]'), '');
+      bool isValid = phoneText.isNotEmpty && phoneText.length >= 9 && phoneText.length <= 11;
+      print('📱 Phone validation: text="$phoneText", length=${phoneText.length}, valid=$isValid');
+      return isValid;
+    }
+    
+    print('✅ Payment method selected and no phone required');
+    return true;
+  }
+
+  Future<void> _handleConfirmPayment() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isProcessing = true;
+    });
+
+    try {
+      // Get the selected payment method details
+      final selectedMethod = _paymentMethods.firstWhere(
+        (method) => method['id'] == _selectedPaymentMethod,
+      );
+
+      // Check if we have a service request ID to update
+      if (widget.serviceRequestId != null && widget.serviceRequestId!.isNotEmpty) {
+        print('💳 Processing payment for service request: ${widget.serviceRequestId}');
+        // Process payment and update service request status
+        final paymentResult = await UserDataService.processPaymentWithPayMongo(
+          serviceRequestId: widget.serviceRequestId!,
+          paymentMethod: selectedMethod['method_type'] ?? 'gcash', // Use method_type for PayMongo
+          amount: _totalAmount ?? 515.00,
+          phoneNumber: _getSelectedMethodRequiresPhone() ? _phoneController.text : null,
+        );
+        
+        print('✅ Payment result: $paymentResult');
+        
+        // Check if this is a QR payment that needs user interaction
+        if ((selectedMethod['method_type']?.toLowerCase() == 'gcash' || 
+             selectedMethod['method_type']?.toLowerCase() == 'paymaya') && 
+            paymentResult.containsKey('checkout_url') && 
+            paymentResult['requires_redirect'] == true) {
+          
+          // Direct redirect to PayMongo website
+          final checkoutUrl = paymentResult['checkout_url'];
+          print('🌐 Redirecting to PayMongo: $checkoutUrl');
+          
+          try {
+            final Uri url = Uri.parse(checkoutUrl);
+            if (await canLaunchUrl(url)) {
+              await launchUrl(
+                url,
+                mode: LaunchMode.externalApplication, // Open in browser
+              );
+              
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Redirected to PayMongo for payment'),
+                    backgroundColor: Colors.blue,
+                  ),
+                );
+                
+                // Go back to previous screen, payment will be processed externally
+                Navigator.of(context).pop({
+                  'success': true,
+                  'payment_redirected': true,
+                  'transaction_id': paymentResult['transaction_id'],
+                });
+              }
+            } else {
+              throw Exception('Cannot launch PayMongo URL');
+            }
+          } catch (e) {
+            print('❌ Error launching PayMongo URL: $e');
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Error opening PayMongo: $e'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
+          
+          return; // Exit early since we've redirected to external payment
+        } else {
+          // For other payment methods, show immediate success
+          _showSuccessMessage('Payment successful! Your service request has been confirmed.');
+        }
+      } else {
+        // Fallback for when no service request ID is available
+        print('⚠️ No service request ID available, simulating payment...');
+        
+        // Simulate payment processing
+        await Future.delayed(const Duration(seconds: 2));
+        _showSuccessMessage('Payment successful!');
+      }
+
+      // Navigate back with success result
+      if (mounted) {
+        Navigator.of(context).pop({
+          'success': true,
+          'paymentMethod': selectedMethod['display_name'],
+        });
+      }
+    } catch (e) {
+      print('❌ Payment processing error: $e');
+      _showErrorMessage('Payment processing failed: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
+    }
+  }
+
+  void _showSuccessMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
+  void _showErrorMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  /// Load pricing data based on location
+  Future<void> _loadPricingData() async {
+    setState(() {
+      _isLoadingPricing = true;
+    });
+
+    try {
+      if (widget.serviceRequestId != null) {
+        final serviceRequest = await SupabaseService.getServiceRequestById(widget.serviceRequestId!);
+        
+        if (serviceRequest != null) {
+          // Set customer location
+          _customerLocation = LatLng(
+            serviceRequest['pickup_latitude']?.toDouble() ?? 0.0,
+            serviceRequest['pickup_longitude']?.toDouble() ?? 0.0,
+          );
+          
+          final mechanicLocationData = await SupabaseService.getMechanicLocationForRequest(widget.serviceRequestId!);
+          
+          if (mechanicLocationData != null) {
+            _mechanicLocation = LatLng(
+              mechanicLocationData['current_latitude']?.toDouble() ?? 0.0,
+              mechanicLocationData['current_longitude']?.toDouble() ?? 0.0,
+            );
+          }
+        }
+      }
+
+      // Calculate pricing if we have both locations
+      if (_customerLocation != null && _mechanicLocation != null) {
+        _serviceFee = _pricingService.calculateServiceFee(
+          customerLocation: _customerLocation!,
+          mechanicLocation: _mechanicLocation!,
+        );
+        _totalAmount = _pricingService.calculateTotalAmount(
+          customerLocation: _customerLocation!,
+          mechanicLocation: _mechanicLocation!,
+        );
+        
+        print('📊 Pricing calculated:');
+        print('   Service Fee: ₱${_serviceFee?.toStringAsFixed(2)}');
+        print('   Total Amount: ₱${_totalAmount?.toStringAsFixed(2)}');
+      } else {
+        // Default pricing when location data isn't available
+        print('! Could not get location data, using default pricing');
+        _serviceFee = 500.00;
+        _totalAmount = 515.00;
+      }
+    } catch (e) {
+      print('❌ Error loading pricing data: $e');
+      _serviceFee = 500.00;
+      _totalAmount = 515.00;
+    } finally {
+      setState(() {
+        _isLoadingPricing = false;
+      });
+    }
+  }
+        
+        // Show success message
+        _showSuccessMessage('Payment successful! Your service has been confirmed.');
+      }
+
+      // Navigate back to home with payment success data
+      await Future.delayed(const Duration(seconds: 2));
+      if (mounted) {
+        // Navigate to home page with payment success data
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (context) => RoadAidHomePage(
+              initialIndex: 0,
+              paymentSuccessData: {
+                'requestId': widget.serviceRequestId ?? 'N/A',
+                'issueTitle': widget.issueTitle,
+                'vehicleBrand': widget.vehicleBrand,
+                'vehicleModel': widget.vehicleModel,
+                'vehicleYear': widget.vehicleYear,
+                'paymentMethod': selectedMethod['display_name'],
+                'phoneNumber': _phoneController.text,
+                'amount': '₱${_totalAmount?.toStringAsFixed(2) ?? '515.00'}',
+                'isActualPayment': true,
+              },
+            ),
+          ),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      print('❌ Payment processing error: $e');
+      _showErrorMessage('Error processing payment: ${e.toString()}');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
+    }
+  }
+
+  void _showSuccessMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  void _showErrorMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  /// Load location data and calculate distance-based pricing
+  Future<void> _loadLocationDataAndCalculatePricing() async {
+    try {
+      setState(() {
+        _isLoadingPricing = true;
+      });
+
+      // Get service request details to get customer location
+      if (widget.serviceRequestId != null) {
+        final serviceRequest = await SupabaseService.getServiceRequestById(widget.serviceRequestId!);
+        
+        if (serviceRequest != null && 
+            serviceRequest['latitude'] != null && 
+            serviceRequest['longitude'] != null) {
+          _customerLocation = LatLng(
+            (serviceRequest['latitude'] as num).toDouble(),
+            (serviceRequest['longitude'] as num).toDouble(),
+          );
+          
+          // Get mechanic location for the service request
+          final mechanicLocationData = await SupabaseService.getMechanicLocationForRequest(widget.serviceRequestId!);
+          
+          if (mechanicLocationData != null &&
+              mechanicLocationData['latitude'] != null &&
+              mechanicLocationData['longitude'] != null) {
+            _mechanicLocation = LatLng(
+              (mechanicLocationData['latitude'] as num).toDouble(),
+              (mechanicLocationData['longitude'] as num).toDouble(),
+            );
+          }
+        }
+      }
+      
+      // Calculate pricing if both locations are available
+      if (_customerLocation != null && _mechanicLocation != null) {
+        _serviceFee = _pricingService.calculateServiceFee(
+          customerLocation: _customerLocation!,
+          mechanicLocation: _mechanicLocation!,
+        );
+        
+        _totalAmount = _pricingService.calculateTotalAmount(
+          customerLocation: _customerLocation!,
+          mechanicLocation: _mechanicLocation!,
+        );
+        
+        print('🧮 Calculated pricing:');
+        print('   Service Fee: ₱${_serviceFee?.toStringAsFixed(2)}');
+        print('   Total Amount: ₱${_totalAmount?.toStringAsFixed(2)}');
+      } else {
+        print('⚠️ Could not get location data, using default pricing');
+        // Fallback to minimum pricing (500 + 15 processing fee)
+        _serviceFee = 500.00;
+        _totalAmount = 515.00;
+      }
+      
+    } catch (e) {
+      print('❌ Error loading pricing data: $e');
+      // Fallback to minimum pricing (500 + 15 processing fee)
+      _serviceFee = 500.00;
+      _totalAmount = 515.00;
+    } finally {
+      setState(() {
+        _isLoadingPricing = false;
+      });
+    }
+  }
+}

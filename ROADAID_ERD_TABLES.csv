@@ -1,0 +1,357 @@
+Table Name,Column Name,Data Type,Key Type,Description,Color Group
+auth.users,id,uuid,PK,User authentication ID,#4A90E2
+auth.users,email,text,UNIQUE,User email,#4A90E2
+auth.users,encrypted_password,text,,Hashed password,#4A90E2
+auth.users,created_at,timestamptz,,Account creation timestamp,#4A90E2
+user_profiles,id,uuid,PK|FK,References auth.users(id),#4A90E2
+user_profiles,first_name,varchar,,User first name,#4A90E2
+user_profiles,last_name,varchar,,User last name,#4A90E2
+user_profiles,email,varchar,UNIQUE,User email,#4A90E2
+user_profiles,phone_number,varchar,,Contact number,#4A90E2
+user_profiles,user_type,varchar,,"customer | mechanic | talyer_owner | admin",#4A90E2
+user_profiles,profile_image_url,text,,Profile photo URL,#4A90E2
+user_profiles,current_latitude,numeric,,Current location (lat),#4A90E2
+user_profiles,current_longitude,numeric,,Current location (lng),#4A90E2
+user_profiles,shop_id,uuid,FK,References shops(id),#4A90E2
+user_profiles,status,varchar,,"'active', 'suspended', 'banned'",#4A90E2
+shops,id,uuid,PK,Shop ID,#4A90E2
+shops,owner_id,uuid,FK|UNIQUE,References user_profiles(id),#4A90E2
+shops,shop_name,varchar,,Shop business name,#4A90E2
+shops,shop_address,text,,Physical address,#4A90E2
+shops,shop_phone,text,,Contact number,#4A90E2
+shops,shop_email,text,,Business email,#4A90E2
+shops,latitude,numeric,,Shop location (lat),#4A90E2
+shops,longitude,numeric,,Shop location (lng),#4A90E2
+shops,service_radius,numeric,,Coverage area (km),#4A90E2
+shops,business_hours,jsonb,,Operating schedule,#4A90E2
+shops,current_status,varchar,,"'open', 'closed', 'busy'",#4A90E2
+shops,rating,numeric,,Average rating,#4A90E2
+shops,is_active,boolean,,Active status,#4A90E2
+service_providers,id,uuid,PK,Provider ID,#4A90E2
+service_providers,user_id,uuid,FK|UNIQUE,References user_profiles(id),#4A90E2
+service_providers,shop_id,uuid,FK,References shops(id),#4A90E2
+service_providers,talyer_owner_id,uuid,FK,References user_profiles(id),#4A90E2
+service_providers,company_name,varchar,,Business name,#4A90E2
+service_providers,rating,numeric,,Average rating,#4A90E2
+service_providers,service_radius,numeric,,Service area (km),#4A90E2
+service_providers,is_verified,boolean,,Verification status,#4A90E2
+service_providers,is_available,boolean,,Availability status,#4A90E2
+service_providers,current_latitude,numeric,,Current location (lat),#4A90E2
+service_providers,current_longitude,numeric,,Current location (lng),#4A90E2
+service_providers,status,varchar,,"'offline', 'available', 'busy'",#4A90E2
+vehicles,id,uuid,PK,Vehicle ID,#4A90E2
+vehicles,user_id,uuid,FK,References user_profiles(id),#4A90E2
+vehicles,brand_name,varchar,,Vehicle brand,#4A90E2
+vehicles,model_name,varchar,,Vehicle model,#4A90E2
+vehicles,year,integer,,Manufacturing year,#4A90E2
+vehicles,plate_number,varchar,,License plate,#4A90E2
+vehicles,vehicle_type,varchar,,"'car', 'motorcycle', 'truck'",#4A90E2
+vehicles,is_primary,boolean,,Primary vehicle flag,#4A90E2
+service_categories,id,uuid,PK,Category ID,#7B68EE
+service_categories,name,varchar,UNIQUE,Category name,#7B68EE
+service_categories,description,text,,Service description,#7B68EE
+service_categories,base_price,numeric,,Base pricing,#7B68EE
+service_categories,estimated_duration,integer,,Duration (minutes),#7B68EE
+service_categories,category_type,text,,"'standard', 'specialized', 'emergency'",#7B68EE
+service_categories,is_active,boolean,,Active status,#7B68EE
+service_requests,id,uuid,PK,Request ID,#7B68EE
+service_requests,customer_id,uuid,FK,References user_profiles(id),#7B68EE
+service_requests,provider_id,uuid,FK,References service_providers(id),#7B68EE
+service_requests,vehicle_id,uuid,FK,References vehicles(id),#7B68EE
+service_requests,category_id,uuid,FK,References service_categories(id),#7B68EE
+service_requests,shop_id,uuid,FK,References shops(id),#7B68EE
+service_requests,assigned_mechanic_id,uuid,FK,References user_profiles(id),#7B68EE
+service_requests,title,varchar,,Request title,#7B68EE
+service_requests,description,text,,Problem description,#7B68EE
+service_requests,status,varchar,,Request status,#7B68EE
+service_requests,pickup_latitude,numeric,,Customer location (lat),#7B68EE
+service_requests,pickup_longitude,numeric,,Customer location (lng),#7B68EE
+service_requests,pickup_address,text,,Customer address,#7B68EE
+service_requests,service_fee,numeric,,Calculated service fee,#7B68EE
+service_requests,estimated_price,numeric,,Estimated cost,#7B68EE
+service_requests,final_price,numeric,,Final cost,#7B68EE
+service_requests,payment_status,varchar,,Payment state,#7B68EE
+service_requests,request_type,text,,"'direct_mechanic', 'shop_based', 'broadcast'",#7B68EE
+service_requests,is_broadcast_request,boolean,,Broadcast flag,#7B68EE
+service_requests,broadcast_radius_km,numeric,,Broadcast area,#7B68EE
+shop_services,id,uuid,PK,Service ID,#7B68EE
+shop_services,shop_id,uuid,FK,References shops(id),#7B68EE
+shop_services,category_id,uuid,FK,References service_categories(id),#7B68EE
+shop_services,service_name,text,,Service name,#7B68EE
+shop_services,description,text,,Service details,#7B68EE
+shop_services,base_price,numeric,,Base pricing,#7B68EE
+shop_services,custom_price,numeric,,Shop-specific price,#7B68EE
+shop_services,estimated_duration,integer,,Duration (minutes),#7B68EE
+shop_services,is_active,boolean,,Active status,#7B68EE
+shop_services,availability_status,text,,"'available', 'temporarily_unavailable'",#7B68EE
+invoices,id,uuid,PK,Invoice ID,#50C878
+invoices,request_id,uuid,FK,References service_requests(id),#50C878
+invoices,customer_id,uuid,FK,References user_profiles(id),#50C878
+invoices,mechanic_id,uuid,FK,References user_profiles(id),#50C878
+invoices,talyer_owner_id,uuid,FK,References user_profiles(id),#50C878
+invoices,provider_id,uuid,FK,References service_providers(id),#50C878
+invoices,invoice_number,text,UNIQUE,Invoice number,#50C878
+invoices,subtotal,numeric,,Subtotal amount,#50C878
+invoices,platform_fee,numeric,,Platform commission,#50C878
+invoices,total_amount,numeric,,Total payable,#50C878
+invoices,talyer_net_amount,numeric,,Shop net earnings,#50C878
+invoices,provider_net_amount,numeric,,Mechanic net earnings,#50C878
+invoices,status,text,,"'generated', 'sent', 'paid'",#50C878
+invoices,selected_payment_method,text,,"'cash', 'gcash', 'paymaya'",#50C878
+invoices,payment_details,jsonb,,Payment metadata,#50C878
+invoices,generated_at,timestamptz,,Creation time,#50C878
+invoices,paid_at,timestamptz,,Payment time,#50C878
+payments,id,uuid,PK,Payment ID,#50C878
+payments,request_id,uuid,FK,References service_requests(id),#50C878
+payments,customer_id,uuid,FK,References user_profiles(id),#50C878
+payments,provider_id,uuid,FK,References service_providers(id),#50C878
+payments,invoice_id,uuid,FK,References invoices(id),#50C878
+payments,amount,numeric,,Payment amount,#50C878
+payments,platform_fee,numeric,,Platform commission,#50C878
+payments,provider_amount,numeric,,Provider earnings,#50C878
+payments,payment_method,varchar,,Payment method,#50C878
+payments,transaction_id,varchar,,Gateway transaction ID,#50C878
+payments,status,varchar,,"'pending', 'completed', 'failed'",#50C878
+payments,payment_gateway,varchar,,"'paymongo', 'gcash'",#50C878
+payment_releases,id,uuid,PK,Release ID,#50C878
+payment_releases,payment_id,uuid,FK,References payments(id),#50C878
+payment_releases,request_id,uuid,FK,References service_requests(id),#50C878
+payment_releases,provider_id,uuid,FK,References service_providers(id),#50C878
+payment_releases,customer_id,uuid,FK,References user_profiles(id),#50C878
+payment_releases,admin_id,uuid,FK,References auth.users(id),#50C878
+payment_releases,total_amount,numeric,,Total amount,#50C878
+payment_releases,platform_fee,numeric,,Platform fee,#50C878
+payment_releases,provider_amount,numeric,,Provider earnings,#50C878
+payment_releases,release_status,varchar,,"'pending', 'approved', 'released'",#50C878
+payment_releases,release_method,varchar,,"'bank_transfer', 'gcash'",#50C878
+payment_releases,approved_at,timestamptz,,Approval time,#50C878
+payment_releases,released_at,timestamptz,,Release time,#50C878
+cash_payment_verifications,id,uuid,PK,Verification ID,#50C878
+cash_payment_verifications,invoice_id,uuid,FK,References invoices(id),#50C878
+cash_payment_verifications,payment_id,uuid,FK,References payments(id),#50C878
+cash_payment_verifications,request_id,uuid,FK,References service_requests(id),#50C878
+cash_payment_verifications,customer_id,uuid,FK,References user_profiles(id),#50C878
+cash_payment_verifications,mechanic_id,uuid,FK,References user_profiles(id),#50C878
+cash_payment_verifications,verified_by,uuid,FK,References auth.users(id),#50C878
+cash_payment_verifications,cash_amount,numeric,,Cash amount,#50C878
+cash_payment_verifications,cash_photo_url,text,,Photo of cash,#50C878
+cash_payment_verifications,receipt_photo_url,text,,Photo of receipt,#50C878
+cash_payment_verifications,verification_status,text,,"'pending', 'verified', 'rejected'",#50C878
+cash_payment_verifications,verified_at,timestamptz,,Verification time,#50C878
+mechanic_job_history,id,uuid,PK,History ID,#F4A460
+mechanic_job_history,mechanic_id,uuid,FK,References user_profiles(id),#F4A460
+mechanic_job_history,service_request_id,uuid,FK,References service_requests(id),#F4A460
+mechanic_job_history,customer_id,uuid,FK,References user_profiles(id),#F4A460
+mechanic_job_history,shop_id,uuid,FK,References shops(id),#F4A460
+mechanic_job_history,job_title,text,,Job title,#F4A460
+mechanic_job_history,job_description,text,,Job details,#F4A460
+mechanic_job_history,job_status,text,,"'completed', 'cancelled'",#F4A460
+mechanic_job_history,completed_at,timestamptz,,Completion time,#F4A460
+mechanic_job_history,total_amount,numeric,,Total earnings,#F4A460
+mechanic_job_history,mechanic_earnings,numeric,,Mechanic share,#F4A460
+mechanic_job_history,shop_earnings,numeric,,Shop share,#F4A460
+mechanic_job_history,platform_fee,numeric,,Platform fee,#F4A460
+mechanic_job_history,rating,numeric,,Customer rating,#F4A460
+mechanic_job_history,review_text,text,,Customer review,#F4A460
+customer_job_history,id,uuid,PK,History ID,#F4A460
+customer_job_history,customer_id,uuid,FK,References user_profiles(id),#F4A460
+customer_job_history,service_request_id,uuid,FK,References service_requests(id),#F4A460
+customer_job_history,mechanic_id,uuid,FK,References user_profiles(id),#F4A460
+customer_job_history,shop_id,uuid,FK,References shops(id),#F4A460
+customer_job_history,job_title,text,,Service title,#F4A460
+customer_job_history,job_description,text,,Service details,#F4A460
+customer_job_history,job_status,text,,"'completed', 'cancelled'",#F4A460
+customer_job_history,completed_at,timestamptz,,Completion time,#F4A460
+customer_job_history,total_amount,numeric,,Total paid,#F4A460
+customer_job_history,rating,numeric,,Given rating,#F4A460
+customer_job_history,review_text,text,,Given review,#F4A460
+notifications,id,uuid,PK,Notification ID,#FF6B6B
+notifications,user_id,uuid,FK,References user_profiles(id),#FF6B6B
+notifications,title,text,,Notification title,#FF6B6B
+notifications,body,text,,Notification message,#FF6B6B
+notifications,type,text,,Notification type,#FF6B6B
+notifications,data,jsonb,,Additional data,#FF6B6B
+notifications,read,boolean,,Read status,#FF6B6B
+notifications,created_at,timestamptz,,Creation time,#FF6B6B
+messages,id,uuid,PK,Message ID,#FF6B6B
+messages,request_id,uuid,FK,References service_requests(id),#FF6B6B
+messages,sender_id,uuid,FK,References user_profiles(id),#FF6B6B
+messages,receiver_id,uuid,FK,References user_profiles(id),#FF6B6B
+messages,message,text,,Message content,#FF6B6B
+messages,sent_at,timestamptz,,Send time,#FF6B6B
+messages,is_read,boolean,,Read status,#FF6B6B
+shop_notifications,id,uuid,PK,Notification ID,#FF6B6B
+shop_notifications,shop_id,uuid,FK,References shops(id),#FF6B6B
+shop_notifications,shop_owner_id,uuid,FK,References user_profiles(id),#FF6B6B
+shop_notifications,related_request_id,uuid,FK,References service_requests(id),#FF6B6B
+shop_notifications,notification_type,text,,Type of notification,#FF6B6B
+shop_notifications,title,text,,Notification title,#FF6B6B
+shop_notifications,message,text,,Notification message,#FF6B6B
+shop_notifications,is_read,boolean,,Read status,#FF6B6B
+request_broadcasts,id,uuid,PK,Broadcast ID,#7B68EE
+request_broadcasts,request_id,uuid,FK,References service_requests(id),#7B68EE
+request_broadcasts,provider_id,uuid,FK,References service_providers(id),#7B68EE
+request_broadcasts,shop_id,uuid,FK,References shops(id),#7B68EE
+request_broadcasts,mechanic_id,uuid,FK,References user_profiles(id),#7B68EE
+request_broadcasts,provider_type,text,,"'shop', 'mechanic'",#7B68EE
+request_broadcasts,distance_km,numeric,,Distance to customer,#7B68EE
+request_broadcasts,notification_sent_at,timestamptz,,Notification time,#7B68EE
+request_broadcasts,viewed_at,timestamptz,,View time,#7B68EE
+request_broadcasts,response_status,text,,"'pending', 'accepted', 'declined'",#7B68EE
+request_broadcasts,responded_at,timestamptz,,Response time,#7B68EE
+request_routing,id,uuid,PK,Routing ID,#7B68EE
+request_routing,request_id,uuid,FK,References service_requests(id),#7B68EE
+request_routing,eligible_mechanic_id,uuid,FK,References user_profiles(id),#7B68EE
+request_routing,eligible_shop_id,uuid,FK,References shops(id),#7B68EE
+request_routing,routing_type,text,,"'direct_mechanic', 'shop_based'",#7B68EE
+request_routing,is_notified,boolean,,Notification sent,#7B68EE
+request_routing,distance_km,numeric,,Distance,#7B68EE
+reviews,id,uuid,PK,Review ID,#F39C12
+reviews,request_id,uuid,FK,References service_requests(id),#F39C12
+reviews,customer_id,uuid,FK,References user_profiles(id),#F39C12
+reviews,provider_id,uuid,FK,References service_providers(id),#F39C12
+reviews,rating,integer,,Rating (1-5),#F39C12
+reviews,comment,text,,Review text,#F39C12
+reviews,response,text,,Provider response,#F39C12
+reviews,is_verified,boolean,,Verification status,#F39C12
+progress_photos,id,uuid,PK,Photo ID,#7B68EE
+progress_photos,service_request_id,uuid,FK,References service_requests(id),#7B68EE
+progress_photos,mechanic_id,uuid,FK,References user_profiles(id),#7B68EE
+progress_photos,service_phase,text,,"'arrival', 'inspection', 'work_in_progress'",#7B68EE
+progress_photos,image_url,text,,Photo URL,#7B68EE
+progress_photos,description,text,,Photo description,#7B68EE
+progress_photos,timestamp,timestamptz,,Upload time,#7B68EE
+service_phase_tracking,id,uuid,PK,Tracking ID,#7B68EE
+service_phase_tracking,service_request_id,uuid,FK|UNIQUE,References service_requests(id),#7B68EE
+service_phase_tracking,mechanic_id,uuid,FK,References user_profiles(id),#7B68EE
+service_phase_tracking,current_phase,text,,Current service phase,#7B68EE
+service_phase_tracking,phase_started_at,timestamptz,,Phase start time,#7B68EE
+service_phase_tracking,phase_history,jsonb,,Historical phases,#7B68EE
+account_security_logs,id,uuid,PK,Log ID,#2C3E50
+account_security_logs,user_id,uuid,FK,References auth.users(id),#2C3E50
+account_security_logs,action_type,text,,"'login', 'logout', 'password_change'",#2C3E50
+account_security_logs,ip_address,inet,,IP address,#2C3E50
+account_security_logs,user_agent,text,,Browser/device info,#2C3E50
+account_security_logs,success,boolean,,Action success,#2C3E50
+account_security_logs,created_at,timestamptz,,Log time,#2C3E50
+password_reset_tokens,id,uuid,PK,Token ID,#2C3E50
+password_reset_tokens,user_id,uuid,FK,References auth.users(id),#2C3E50
+password_reset_tokens,token,text,UNIQUE,Reset token,#2C3E50
+password_reset_tokens,expires_at,timestamptz,,Expiration time,#2C3E50
+password_reset_tokens,used_at,timestamptz,,Usage time,#2C3E50
+password_reset_tokens,is_active,boolean,,Active status,#2C3E50
+email_verification_tokens,id,uuid,PK,Token ID,#2C3E50
+email_verification_tokens,user_id,uuid,FK,References auth.users(id),#2C3E50
+email_verification_tokens,old_email,text,,Previous email,#2C3E50
+email_verification_tokens,new_email,text,,New email,#2C3E50
+email_verification_tokens,token,text,UNIQUE,Verification token,#2C3E50
+email_verification_tokens,token_type,text,,"'registration', 'email_change'",#2C3E50
+email_verification_tokens,expires_at,timestamptz,,Expiration time,#2C3E50
+mechanic_invitations,id,uuid,PK,Invitation ID,#F39C12
+mechanic_invitations,shop_owner_id,uuid,FK,References user_profiles(id),#F39C12
+mechanic_invitations,shop_id,uuid,FK,References shops(id),#F39C12
+mechanic_invitations,mechanic_user_id,uuid,FK,References auth.users(id),#F39C12
+mechanic_invitations,email,text,,Invitee email,#F39C12
+mechanic_invitations,first_name,text,,Invitee first name,#F39C12
+mechanic_invitations,last_name,text,,Invitee last name,#F39C12
+mechanic_invitations,temporary_password,text,,Temp password,#F39C12
+mechanic_invitations,invitation_token,text,UNIQUE,Invite token,#F39C12
+mechanic_invitations,status,text,,"'pending', 'sent', 'accepted'",#F39C12
+mechanic_invitations,expires_at,timestamptz,,Expiration time,#F39C12
+shop_mechanics,id,uuid,PK,Assignment ID,#F39C12
+shop_mechanics,shop_id,uuid,FK,References shops(id),#F39C12
+shop_mechanics,mechanic_id,uuid,FK,References user_profiles(id),#F39C12
+shop_mechanics,role,varchar,,"'mechanic', 'senior_mechanic'",#F39C12
+shop_mechanics,hourly_rate,numeric,,Pay rate,#F39C12
+shop_mechanics,is_active,boolean,,Active status,#F39C12
+shop_mechanics,is_available,boolean,,Availability,#F39C12
+mechanic_availability_status,id,uuid,PK,Status ID,#F39C12
+mechanic_availability_status,mechanic_id,uuid,FK|UNIQUE,References user_profiles(id),#F39C12
+mechanic_availability_status,shop_id,uuid,FK,References shops(id),#F39C12
+mechanic_availability_status,current_request_id,uuid,FK,References service_requests(id),#F39C12
+mechanic_availability_status,current_status,text,,"'available', 'busy', 'offline'",#F39C12
+mechanic_availability_status,location_latitude,numeric,,Current location (lat),#F39C12
+mechanic_availability_status,location_longitude,numeric,,Current location (lng),#F39C12
+mechanic_availability_status,is_accepting_requests,boolean,,Accepting flag,#F39C12
+document_verifications,id,uuid,PK,Verification ID,#2C3E50
+document_verifications,user_id,uuid,FK,References auth.users(id),#2C3E50
+document_verifications,verified_by,uuid,FK,References auth.users(id),#2C3E50
+document_verifications,document_type,text,,"'business_permit', 'drivers_license'",#2C3E50
+document_verifications,document_url,text,,Document URL,#2C3E50
+document_verifications,verification_status,text,,"'pending', 'verified', 'rejected'",#2C3E50
+document_verifications,verified_at,timestamptz,,Verification time,#2C3E50
+business_permits,id,uuid,PK,Permit ID,#2C3E50
+business_permits,provider_id,uuid,FK,References service_providers(id),#2C3E50
+business_permits,verified_by,uuid,FK,References auth.users(id),#2C3E50
+business_permits,business_permit_name,text,,Business name,#2C3E50
+business_permits,registered_address,text,,Business address,#2C3E50
+business_permits,receipt_no,text,UNIQUE,Receipt number,#2C3E50
+business_permits,permit_document_url,text,,Document URL,#2C3E50
+business_permits,is_verified,boolean,,Verification status,#2C3E50
+talyer_owner_verifications,id,uuid,PK,Verification ID,#2C3E50
+talyer_owner_verifications,user_id,uuid,FK|UNIQUE,References user_profiles(id),#2C3E50
+talyer_owner_verifications,reviewed_by,uuid,FK,References auth.users(id),#2C3E50
+talyer_owner_verifications,business_name,varchar,,Business name,#2C3E50
+talyer_owner_verifications,business_permit_url,text,,Permit URL,#2C3E50
+talyer_owner_verifications,valid_id_url,text,,ID URL,#2C3E50
+talyer_owner_verifications,status,varchar,,"'pending', 'approved', 'rejected'",#2C3E50
+talyer_owner_verifications,reviewed_at,timestamptz,,Review time,#2C3E50
+job_completion_codes,id,uuid,PK,Code ID,#F39C12
+job_completion_codes,request_id,uuid,FK,References service_requests(id),#F39C12
+job_completion_codes,customer_id,uuid,FK,References user_profiles(id),#F39C12
+job_completion_codes,used_by_provider_id,uuid,FK,References service_providers(id),#F39C12
+job_completion_codes,completion_code,text,UNIQUE,Completion code,#F39C12
+job_completion_codes,is_used,boolean,,Usage status,#F39C12
+job_completion_codes,expires_at,timestamptz,,Expiration time,#F39C12
+job_completion_codes,used_at,timestamptz,,Usage time,#F39C12
+job_completion_codes,verification_status,varchar,,"'pending', 'verified', 'expired'",#F39C12
+service_completions,id,uuid,PK,Completion ID,#F39C12
+service_completions,request_id,uuid,FK,References service_requests(id),#F39C12
+service_completions,mechanic_id,uuid,FK,References user_profiles(id),#F39C12
+service_completions,customer_id,uuid,FK,References user_profiles(id),#F39C12
+service_completions,completion_code,text,UNIQUE,Completion code,#F39C12
+service_completions,qr_code_data,text,,QR code data,#F39C12
+service_completions,is_scanned,boolean,,Scan status,#F39C12
+service_completions,scanned_at,timestamptz,,Scan time,#F39C12
+service_completions,verification_status,text,,"'pending', 'verified'",#F39C12
+admin_activity_logs,id,uuid,PK,Log ID,#95A5A6
+admin_activity_logs,admin_id,uuid,FK,References auth.users(id),#95A5A6
+admin_activity_logs,action_type,varchar,,Action type,#95A5A6
+admin_activity_logs,target_type,varchar,,Target entity type,#95A5A6
+admin_activity_logs,target_id,uuid,,Target entity ID,#95A5A6
+admin_activity_logs,action_details,jsonb,,Action details,#95A5A6
+admin_activity_logs,created_at,timestamptz,,Log time,#95A5A6
+audit_logs,id,uuid,PK,Log ID,#95A5A6
+audit_logs,user_id,uuid,FK,References user_profiles(id),#95A5A6
+audit_logs,role,varchar,,User role,#95A5A6
+audit_logs,action,text,,Action performed,#95A5A6
+audit_logs,table_name,varchar,,Affected table,#95A5A6
+audit_logs,record_id,uuid,,Affected record,#95A5A6
+audit_logs,old_values,jsonb,,Before values,#95A5A6
+audit_logs,new_values,jsonb,,After values,#95A5A6
+email_notifications,id,uuid,PK,Email ID,#FF6B6B
+email_notifications,recipient_user_id,uuid,FK,References auth.users(id),#FF6B6B
+email_notifications,sender_user_id,uuid,FK,References auth.users(id),#FF6B6B
+email_notifications,email_type,text,,Email type,#FF6B6B
+email_notifications,recipient_email,text,,Recipient email,#FF6B6B
+email_notifications,subject,text,,Email subject,#FF6B6B
+email_notifications,body,text,,Email body,#FF6B6B
+email_notifications,delivery_status,text,,"'pending', 'sent', 'delivered'",#FF6B6B
+notification_templates,id,uuid,PK,Template ID,#FF6B6B
+notification_templates,category,text,,Template category,#FF6B6B
+notification_templates,priority,text,,"'low', 'normal', 'high', 'urgent'",#FF6B6B
+notification_templates,title_template,text,,Title template,#FF6B6B
+notification_templates,message_template,text,,Message template,#FF6B6B
+notification_templates,is_active,boolean,,Active status,#FF6B6B
+app_settings,id,uuid,PK,Setting ID,#95A5A6
+app_settings,key,varchar,UNIQUE,Setting key,#95A5A6
+app_settings,value,text,,Setting value,#95A5A6
+app_settings,description,text,,Description,#95A5A6
+app_settings,is_public,boolean,,Public access,#95A5A6
+app_settings,category,text,,Setting category,#95A5A6
+distance_pricing_config,id,uuid,PK,Config ID,#95A5A6
+distance_pricing_config,base_rate_per_km,numeric,,Base rate (per km),#95A5A6
+distance_pricing_config,minimum_service_fee,numeric,,Minimum fee,#95A5A6
+distance_pricing_config,maximum_service_fee,numeric,,Maximum fee,#95A5A6
+distance_pricing_config,emergency_multiplier,numeric,,Emergency rate,#95A5A6
+distance_pricing_config,is_active,boolean,,Active status,#95A5A6

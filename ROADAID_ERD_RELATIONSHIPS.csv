@@ -1,0 +1,62 @@
+From Table,To Table,Relationship Type,From Cardinality,To Cardinality,Foreign Key Column,Description
+auth.users,user_profiles,One-to-One,1,1,user_profiles.id,Authentication to profile
+user_profiles,service_providers,One-to-One,1,1,service_providers.user_id,User is provider
+user_profiles,shops,One-to-One,1,1,shops.owner_id,Talyer owner owns shop
+user_profiles,vehicles,One-to-Many,1,N,vehicles.user_id,User owns vehicles
+user_profiles,service_requests,One-to-Many,1,N,service_requests.customer_id,Customer creates requests
+user_profiles,mechanic_job_history,One-to-Many,1,N,mechanic_job_history.mechanic_id,Mechanic job history
+user_profiles,customer_job_history,One-to-Many,1,N,customer_job_history.customer_id,Customer job history
+user_profiles,invoices,One-to-Many,1,N,invoices.customer_id,Customer invoices
+user_profiles,notifications,One-to-Many,1,N,notifications.user_id,User receives notifications
+user_profiles,reviews,One-to-Many,1,N,reviews.customer_id,Customer gives reviews
+user_profiles,messages,One-to-Many,1,N,messages.sender_id,User sends messages
+user_profiles,shop_notifications,One-to-Many,1,N,shop_notifications.shop_owner_id,Shop owner notifications
+service_providers,service_requests,One-to-Many,1,N,service_requests.provider_id,Provider handles requests
+service_providers,request_broadcasts,One-to-Many,1,N,request_broadcasts.provider_id,Provider receives broadcasts
+service_providers,business_permits,One-to-Many,1,N,business_permits.provider_id,Provider verification documents
+shops,service_providers,One-to-Many,1,N,service_providers.shop_id,Shop employs mechanics
+shops,shop_services,One-to-Many,1,N,shop_services.shop_id,Shop offers services
+shops,service_requests,One-to-Many,1,N,service_requests.shop_id,Shop receives requests
+shops,mechanic_job_history,One-to-Many,1,N,mechanic_job_history.shop_id,Shop job records
+shops,shop_mechanics,One-to-Many,1,N,shop_mechanics.shop_id,Shop mechanic assignments
+shops,shop_notifications,One-to-Many,1,N,shop_notifications.shop_id,Shop notifications
+vehicles,service_requests,One-to-Many,1,N,service_requests.vehicle_id,Vehicle used in requests
+service_categories,shop_services,One-to-Many,1,N,shop_services.category_id,Service category offerings
+service_categories,service_requests,One-to-Many,1,N,service_requests.category_id,Request service type
+service_requests,invoices,One-to-Many,1,N,invoices.request_id,Request generates invoices
+service_requests,payments,One-to-Many,1,N,payments.request_id,Request payment records
+service_requests,messages,One-to-Many,1,N,messages.request_id,Request communications
+service_requests,progress_photos,One-to-Many,1,N,progress_photos.service_request_id,Work documentation
+service_requests,request_broadcasts,One-to-Many,1,N,request_broadcasts.request_id,Request broadcasts
+service_requests,mechanic_job_history,One-to-One,1,1,mechanic_job_history.service_request_id,Mechanic job record
+service_requests,customer_job_history,One-to-One,1,1,customer_job_history.service_request_id,Customer job record
+service_requests,job_completion_codes,One-to-Many,1,N,job_completion_codes.request_id,QR completion codes
+service_requests,reviews,One-to-Many,1,N,reviews.request_id,Request reviews
+service_requests,service_phase_tracking,One-to-One,1,1,service_phase_tracking.service_request_id,Phase tracking
+service_requests,cash_payment_verifications,One-to-Many,1,N,cash_payment_verifications.request_id,Cash verifications
+invoices,payments,One-to-Many,1,N,payments.invoice_id,Invoice has payments
+invoices,cash_payment_verifications,One-to-One,1,1,cash_payment_verifications.invoice_id,Cash verification
+payments,payment_releases,One-to-One,1,1,payment_releases.payment_id,Payment released to provider
+payments,cash_payment_verifications,One-to-One,1,1,cash_payment_verifications.payment_id,Cash payment verification
+auth.users,account_security_logs,One-to-Many,1,N,account_security_logs.user_id,User security events
+auth.users,admin_activity_logs,One-to-Many,1,N,admin_activity_logs.admin_id,Admin actions
+auth.users,password_reset_tokens,One-to-Many,1,N,password_reset_tokens.user_id,Password reset requests
+auth.users,email_verification_tokens,One-to-Many,1,N,email_verification_tokens.user_id,Email verifications
+auth.users,mechanic_invitations,One-to-Many,1,N,mechanic_invitations.mechanic_user_id,Mechanic invitations
+auth.users,document_verifications,One-to-Many,1,N,document_verifications.user_id,Document submissions
+auth.users,business_permits,One-to-Many,1,N,business_permits.verified_by,Admin verifications
+auth.users,email_notifications,One-to-Many,1,N,email_notifications.recipient_user_id,Email recipients
+shops,mechanic_invitations,One-to-Many,1,N,mechanic_invitations.shop_id,Shop invitations
+shops,shop_mechanics,One-to-Many,1,N,shop_mechanics.shop_id,Shop mechanics
+shops,mechanic_availability_status,One-to-Many,1,N,mechanic_availability_status.shop_id,Mechanic availability
+shops,request_routing,One-to-Many,1,N,request_routing.eligible_shop_id,Eligible shops
+user_profiles,mechanic_invitations,One-to-Many,1,N,mechanic_invitations.shop_owner_id,Owner invitations
+user_profiles,shop_mechanics,One-to-Many,1,N,shop_mechanics.mechanic_id,Mechanic assignments
+user_profiles,mechanic_availability_status,One-to-One,1,1,mechanic_availability_status.mechanic_id,Mechanic status
+user_profiles,talyer_owner_verifications,One-to-One,1,1,talyer_owner_verifications.user_id,Owner verification
+user_profiles,request_routing,One-to-Many,1,N,request_routing.eligible_mechanic_id,Eligible mechanics
+user_profiles,request_broadcasts,One-to-Many,1,N,request_broadcasts.mechanic_id,Mechanic broadcasts
+user_profiles,audit_logs,One-to-Many,1,N,audit_logs.user_id,User audit trail
+service_providers,reviews,One-to-Many,1,N,reviews.provider_id,Provider receives reviews
+service_providers,payment_releases,One-to-Many,1,N,payment_releases.provider_id,Provider payment releases
+service_providers,job_completion_codes,One-to-Many,1,N,job_completion_codes.used_by_provider_id,Provider completion codes

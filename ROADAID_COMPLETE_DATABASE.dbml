@@ -1,0 +1,749 @@
+// ========================================
+// ROADAID DATABASE - COMPLETE SCHEMA
+// ========================================
+// Generated: October 10, 2025
+// Total Tables: 39
+// Database: PostgreSQL (Supabase)
+// ========================================
+
+// ========================================
+// 1. CORE ENTITY TABLES
+// ========================================
+
+Table auth.users {
+  id uuid [pk, not null]
+  email text [unique, not null]
+  encrypted_password text [not null]
+  created_at timestamptz [default: `now()`]
+  
+  Note: 'Supabase authentication table'
+}
+
+Table user_profiles {
+  id uuid [pk, ref: - auth.users.id]
+  first_name varchar(100)
+  last_name varchar(100)
+  email varchar(255) [unique, not null]
+  phone_number varchar(20)
+  user_type varchar(20) [note: 'customer | mechanic | talyer_owner | admin']
+  profile_image_url text
+  current_latitude numeric(10,8)
+  current_longitude numeric(11,8)
+  shop_id uuid [ref: > shops.id]
+  status varchar(20) [default: 'active', note: 'active | suspended | banned']
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+  
+  Indexes {
+    user_type
+    status
+    (current_latitude, current_longitude)
+  }
+  
+  Note: 'User profile details for all user types'
+}
+
+Table shops {
+  id uuid [pk, default: `gen_random_uuid()`]
+  owner_id uuid [unique, ref: - user_profiles.id]
+  shop_name varchar(255) [not null]
+  shop_address text
+  shop_phone varchar(20)
+  shop_email varchar(255)
+  latitude numeric(10,8)
+  longitude numeric(11,8)
+  service_radius numeric(5,2) [default: 15]
+  business_hours jsonb
+  current_status varchar(20) [default: 'closed', note: 'open | closed | busy']
+  rating numeric(3,2) [default: 0]
+  is_active boolean [default: true]
+  created_at timestamptz [default: `now()`]
+  
+  Indexes {
+    owner_id
+    current_status
+    (latitude, longitude)
+  }
+  
+  Note: 'Auto repair shops / talyer'
+}
+
+Table service_providers {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [unique, ref: - user_profiles.id]
+  shop_id uuid [ref: > shops.id]
+  talyer_owner_id uuid [ref: > user_profiles.id]
+  company_name varchar(255)
+  rating numeric(3,2) [default: 0]
+  service_radius numeric(5,2) [default: 15]
+  is_verified boolean [default: false]
+  is_available boolean [default: true]
+  current_latitude numeric(10,8)
+  current_longitude numeric(11,8)
+  status varchar(20) [default: 'offline', note: 'offline | available | busy']
+  created_at timestamptz [default: `now()`]
+  
+  Indexes {
+    user_id
+    shop_id
+    status
+  }
+  
+  Note: 'Mechanics (shop-based or independent)'
+}
+
+Table vehicles {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [ref: > user_profiles.id]
+  brand_name varchar(100)
+  model_name varchar(100)
+  year integer
+  plate_number varchar(20)
+  vehicle_type varchar(50) [note: 'car | motorcycle | truck']
+  is_primary boolean [default: false]
+  created_at timestamptz [default: `now()`]
+  
+  Indexes {
+    user_id
+    plate_number
+  }
+  
+  Note: 'Customer vehicles'
+}
+
+// ========================================
+// 2. SERVICE MANAGEMENT TABLES
+// ========================================
+
+Table service_categories {
+  id uuid [pk, default: `gen_random_uuid()`]
+  name varchar(100) [unique, not null]
+  description text
+  base_price numeric(10,2)
+  estimated_duration integer
+  category_type varchar(20) [note: 'standard | specialized | emergency']
+  is_active boolean [default: true]
+  created_at timestamptz [default: `now()`]
+  
+  Note: 'Master list of service types'
+}
+
+Table service_requests {
+  id uuid [pk, default: `gen_random_uuid()`]
+  customer_id uuid [ref: > user_profiles.id]
+  provider_id uuid [ref: > service_providers.id]
+  vehicle_id uuid [ref: > vehicles.id]
+  category_id uuid [ref: > service_categories.id]
+  shop_id uuid [ref: > shops.id]
+  assigned_mechanic_id uuid [ref: > user_profiles.id]
+  title varchar(255)
+  description text
+  status varchar(30) [default: 'pending']
+  pickup_latitude numeric(10,8)
+  pickup_longitude numeric(11,8)
+  pickup_address text
+  service_fee numeric(10,2)
+  estimated_price numeric(10,2)
+  final_price numeric(10,2)
+  payment_status varchar(20) [default: 'unpaid']
+  request_type varchar(20) [note: 'direct_mechanic | shop_based | broadcast']
+  is_broadcast_request boolean [default: false]
+  broadcast_radius_km numeric(5,2) [default: 15]
+  created_at timestamptz [default: `now()`]
+  completed_at timestamptz
+  
+  Indexes {
+    customer_id
+    provider_id
+    shop_id
+    status
+    payment_status
+  }
+  
+  Note: 'Service request from customers'
+}
+
+Table shop_services {
+  id uuid [pk, default: `gen_random_uuid()`]
+  shop_id uuid [ref: > shops.id]
+  category_id uuid [ref: > service_categories.id]
+  service_name varchar(255)
+  description text
+  base_price numeric(10,2)
+  custom_price numeric(10,2)
+  estimated_duration integer
+  is_active boolean [default: true]
+  availability_status varchar(30) [default: 'available']
+  created_at timestamptz [default: `now()`]
+  
+  Indexes {
+    shop_id
+    category_id
+  }
+  
+  Note: 'Services offered by shops'
+}
+
+// ========================================
+// 3. FINANCIAL TABLES
+// ========================================
+
+Table invoices {
+  id uuid [pk, default: `gen_random_uuid()`]
+  request_id uuid [ref: > service_requests.id]
+  customer_id uuid [ref: > user_profiles.id]
+  mechanic_id uuid [ref: > user_profiles.id]
+  talyer_owner_id uuid [ref: > user_profiles.id]
+  provider_id uuid [ref: > service_providers.id]
+  invoice_number varchar(50) [unique, not null]
+  subtotal numeric(10,2)
+  platform_fee numeric(10,2)
+  total_amount numeric(10,2)
+  talyer_net_amount numeric(10,2)
+  provider_net_amount numeric(10,2)
+  status varchar(20) [default: 'generated']
+  selected_payment_method varchar(20)
+  payment_details jsonb
+  generated_at timestamptz [default: `now()`]
+  paid_at timestamptz
+  
+  Indexes {
+    request_id
+    invoice_number
+  }
+  
+  Note: 'Invoices for completed services'
+}
+
+Table payments {
+  id uuid [pk, default: `gen_random_uuid()`]
+  request_id uuid [ref: > service_requests.id]
+  customer_id uuid [ref: > user_profiles.id]
+  provider_id uuid [ref: > service_providers.id]
+  invoice_id uuid [ref: > invoices.id]
+  amount numeric(10,2)
+  platform_fee numeric(10,2)
+  provider_amount numeric(10,2)
+  payment_method varchar(20)
+  transaction_id varchar(100) [unique]
+  status varchar(20) [default: 'pending']
+  payment_gateway varchar(50)
+  created_at timestamptz [default: `now()`]
+  paid_at timestamptz
+  
+  Indexes {
+    invoice_id
+    transaction_id
+  }
+  
+  Note: 'Payment records'
+}
+
+Table payment_releases {
+  id uuid [pk, default: `gen_random_uuid()`]
+  payment_id uuid [ref: - payments.id]
+  request_id uuid [ref: > service_requests.id]
+  provider_id uuid [ref: > service_providers.id]
+  customer_id uuid [ref: > user_profiles.id]
+  admin_id uuid [ref: > auth.users.id]
+  total_amount numeric(10,2)
+  platform_fee numeric(10,2)
+  provider_amount numeric(10,2)
+  release_status varchar(20) [default: 'pending']
+  release_method varchar(20)
+  approved_at timestamptz
+  released_at timestamptz
+  created_at timestamptz [default: `now()`]
+  
+  Note: 'Payment releases to providers'
+}
+
+Table cash_payment_verifications {
+  id uuid [pk, default: `gen_random_uuid()`]
+  invoice_id uuid [ref: - invoices.id]
+  payment_id uuid [ref: - payments.id]
+  request_id uuid [ref: > service_requests.id]
+  customer_id uuid [ref: > user_profiles.id]
+  mechanic_id uuid [ref: > user_profiles.id]
+  verified_by uuid [ref: > auth.users.id]
+  cash_amount numeric(10,2)
+  cash_photo_url text
+  receipt_photo_url text
+  verification_status varchar(20) [default: 'pending']
+  verified_at timestamptz
+  created_at timestamptz [default: `now()`]
+  
+  Note: 'Cash payment verification records'
+}
+
+// ========================================
+// 4. JOB HISTORY TABLES
+// ========================================
+
+Table mechanic_job_history {
+  id uuid [pk, default: `gen_random_uuid()`]
+  mechanic_id uuid [ref: > user_profiles.id]
+  service_request_id uuid [ref: - service_requests.id]
+  customer_id uuid [ref: > user_profiles.id]
+  shop_id uuid [ref: > shops.id]
+  job_title varchar(255)
+  job_description text
+  job_status varchar(20)
+  completed_at timestamptz
+  total_amount numeric(10,2)
+  mechanic_earnings numeric(10,2)
+  shop_earnings numeric(10,2)
+  platform_fee numeric(10,2)
+  rating numeric(2,1)
+  review_text text
+  created_at timestamptz [default: `now()`]
+  
+  Indexes {
+    mechanic_id
+    service_request_id
+  }
+  
+  Note: 'Mechanic job history records'
+}
+
+Table customer_job_history {
+  id uuid [pk, default: `gen_random_uuid()`]
+  customer_id uuid [ref: > user_profiles.id]
+  service_request_id uuid [ref: - service_requests.id]
+  mechanic_id uuid [ref: > user_profiles.id]
+  shop_id uuid [ref: > shops.id]
+  job_title varchar(255)
+  job_description text
+  job_status varchar(20)
+  completed_at timestamptz
+  total_amount numeric(10,2)
+  rating numeric(2,1)
+  review_text text
+  created_at timestamptz [default: `now()`]
+  
+  Indexes {
+    customer_id
+    service_request_id
+  }
+  
+  Note: 'Customer job history records'
+}
+
+// ========================================
+// 5. NOTIFICATION & COMMUNICATION TABLES
+// ========================================
+
+Table notifications {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [ref: > user_profiles.id]
+  title varchar(255)
+  body text
+  type varchar(50)
+  data jsonb
+  read boolean [default: false]
+  created_at timestamptz [default: `now()`]
+  
+  Indexes {
+    user_id
+    read
+  }
+  
+  Note: 'In-app notifications'
+}
+
+Table messages {
+  id uuid [pk, default: `gen_random_uuid()`]
+  request_id uuid [ref: > service_requests.id]
+  sender_id uuid [ref: > user_profiles.id]
+  receiver_id uuid [ref: > user_profiles.id]
+  message text
+  sent_at timestamptz [default: `now()`]
+  is_read boolean [default: false]
+  
+  Indexes {
+    request_id
+    sender_id
+    receiver_id
+  }
+  
+  Note: 'Chat messages between users'
+}
+
+Table shop_notifications {
+  id uuid [pk, default: `gen_random_uuid()`]
+  shop_id uuid [ref: > shops.id]
+  shop_owner_id uuid [ref: > user_profiles.id]
+  related_request_id uuid [ref: > service_requests.id]
+  notification_type varchar(50)
+  title varchar(255)
+  message text
+  is_read boolean [default: false]
+  created_at timestamptz [default: `now()`]
+  
+  Note: 'Shop-specific notifications'
+}
+
+// ========================================
+// 6. BROADCAST & REQUEST ROUTING TABLES
+// ========================================
+
+Table request_broadcasts {
+  id uuid [pk, default: `gen_random_uuid()`]
+  request_id uuid [ref: > service_requests.id]
+  provider_id uuid [ref: > service_providers.id]
+  shop_id uuid [ref: > shops.id]
+  mechanic_id uuid [ref: > user_profiles.id]
+  provider_type varchar(20)
+  distance_km numeric(5,2)
+  notification_sent_at timestamptz
+  viewed_at timestamptz
+  response_status varchar(20) [default: 'pending']
+  responded_at timestamptz
+  
+  Indexes {
+    request_id
+    provider_id
+  }
+  
+  Note: 'Broadcast notifications to nearby providers'
+}
+
+Table request_routing {
+  id uuid [pk, default: `gen_random_uuid()`]
+  request_id uuid [ref: > service_requests.id]
+  eligible_mechanic_id uuid [ref: > user_profiles.id]
+  eligible_shop_id uuid [ref: > shops.id]
+  routing_type varchar(20)
+  is_notified boolean [default: false]
+  distance_km numeric(5,2)
+  created_at timestamptz [default: `now()`]
+  
+  Note: 'Request routing algorithm data'
+}
+
+// ========================================
+// 7. REVIEW & RATING TABLES
+// ========================================
+
+Table reviews {
+  id uuid [pk, default: `gen_random_uuid()`]
+  request_id uuid [ref: > service_requests.id]
+  customer_id uuid [ref: > user_profiles.id]
+  provider_id uuid [ref: > service_providers.id]
+  rating integer
+  comment text
+  response text
+  is_verified boolean [default: false]
+  created_at timestamptz [default: `now()`]
+  
+  Indexes {
+    request_id
+    provider_id
+  }
+  
+  Note: 'Customer reviews and ratings'
+}
+
+// ========================================
+// 8. PROGRESS & DOCUMENTATION TABLES
+// ========================================
+
+Table progress_photos {
+  id uuid [pk, default: `gen_random_uuid()`]
+  service_request_id uuid [ref: > service_requests.id]
+  mechanic_id uuid [ref: > user_profiles.id]
+  service_phase varchar(30)
+  image_url text
+  description text
+  timestamp timestamptz [default: `now()`]
+  
+  Indexes {
+    service_request_id
+  }
+  
+  Note: 'Job progress documentation photos'
+}
+
+Table service_phase_tracking {
+  id uuid [pk, default: `gen_random_uuid()`]
+  service_request_id uuid [unique, ref: - service_requests.id]
+  mechanic_id uuid [ref: > user_profiles.id]
+  current_phase varchar(30)
+  phase_started_at timestamptz
+  phase_history jsonb
+  created_at timestamptz [default: `now()`]
+  
+  Note: 'Service phase progression tracking'
+}
+
+// ========================================
+// 9. SECURITY & AUTHENTICATION TABLES
+// ========================================
+
+Table account_security_logs {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [ref: > auth.users.id]
+  action_type varchar(50)
+  ip_address inet
+  user_agent text
+  success boolean [default: true]
+  created_at timestamptz [default: `now()`]
+  
+  Indexes {
+    user_id
+  }
+  
+  Note: 'User security event logs'
+}
+
+Table password_reset_tokens {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [ref: > auth.users.id]
+  token text [unique, not null]
+  expires_at timestamptz
+  used_at timestamptz
+  is_active boolean [default: true]
+  created_at timestamptz [default: `now()`]
+  
+  Note: 'Password reset tokens'
+}
+
+Table email_verification_tokens {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [ref: > auth.users.id]
+  old_email varchar(255)
+  new_email varchar(255)
+  token text [unique, not null]
+  token_type varchar(20)
+  expires_at timestamptz
+  created_at timestamptz [default: `now()`]
+  
+  Note: 'Email verification tokens'
+}
+
+// ========================================
+// 10. MECHANIC MANAGEMENT TABLES
+// ========================================
+
+Table mechanic_invitations {
+  id uuid [pk, default: `gen_random_uuid()`]
+  shop_owner_id uuid [ref: > user_profiles.id]
+  shop_id uuid [ref: > shops.id]
+  mechanic_user_id uuid [ref: > auth.users.id]
+  email varchar(255)
+  first_name varchar(100)
+  last_name varchar(100)
+  temporary_password text
+  invitation_token text [unique]
+  status varchar(20) [default: 'pending']
+  expires_at timestamptz
+  created_at timestamptz [default: `now()`]
+  
+  Note: 'Shop owner mechanic invitations'
+}
+
+Table shop_mechanics {
+  id uuid [pk, default: `gen_random_uuid()`]
+  shop_id uuid [ref: > shops.id]
+  mechanic_id uuid [ref: > user_profiles.id]
+  role varchar(50)
+  hourly_rate numeric(10,2)
+  is_active boolean [default: true]
+  is_available boolean [default: true]
+  created_at timestamptz [default: `now()`]
+  
+  Indexes {
+    shop_id
+    mechanic_id
+  }
+  
+  Note: 'Shop-mechanic assignments'
+}
+
+Table mechanic_availability_status {
+  id uuid [pk, default: `gen_random_uuid()`]
+  mechanic_id uuid [unique, ref: - user_profiles.id]
+  shop_id uuid [ref: > shops.id]
+  current_request_id uuid [ref: > service_requests.id]
+  current_status varchar(20)
+  location_latitude numeric(10,8)
+  location_longitude numeric(11,8)
+  is_accepting_requests boolean [default: true]
+  last_updated timestamptz [default: `now()`]
+  
+  Note: 'Real-time mechanic availability'
+}
+
+// ========================================
+// 11. VERIFICATION TABLES
+// ========================================
+
+Table document_verifications {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [ref: > auth.users.id]
+  verified_by uuid [ref: > auth.users.id]
+  document_type varchar(50)
+  document_url text
+  verification_status varchar(20) [default: 'pending']
+  verified_at timestamptz
+  created_at timestamptz [default: `now()`]
+  
+  Note: 'Document verification records'
+}
+
+Table business_permits {
+  id uuid [pk, default: `gen_random_uuid()`]
+  provider_id uuid [ref: > service_providers.id]
+  verified_by uuid [ref: > auth.users.id]
+  business_permit_name varchar(255)
+  registered_address text
+  receipt_no varchar(100) [unique]
+  permit_document_url text
+  is_verified boolean [default: false]
+  verified_at timestamptz
+  created_at timestamptz [default: `now()`]
+  
+  Note: 'Business permit records'
+}
+
+Table talyer_owner_verifications {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [unique, ref: - user_profiles.id]
+  reviewed_by uuid [ref: > auth.users.id]
+  business_name varchar(255)
+  business_permit_url text
+  valid_id_url text
+  status varchar(20) [default: 'pending']
+  reviewed_at timestamptz
+  created_at timestamptz [default: `now()`]
+  
+  Note: 'Talyer owner verification records'
+}
+
+// ========================================
+// 12. JOB COMPLETION TABLES
+// ========================================
+
+Table job_completion_codes {
+  id uuid [pk, default: `gen_random_uuid()`]
+  request_id uuid [ref: > service_requests.id]
+  customer_id uuid [ref: > user_profiles.id]
+  used_by_provider_id uuid [ref: > service_providers.id]
+  completion_code text [unique, not null]
+  is_used boolean [default: false]
+  expires_at timestamptz
+  used_at timestamptz
+  verification_status varchar(20) [default: 'pending']
+  created_at timestamptz [default: `now()`]
+  
+  Note: 'QR code job completion verification'
+}
+
+Table service_completions {
+  id uuid [pk, default: `gen_random_uuid()`]
+  request_id uuid [ref: > service_requests.id]
+  mechanic_id uuid [ref: > user_profiles.id]
+  customer_id uuid [ref: > user_profiles.id]
+  completion_code text [unique]
+  qr_code_data text
+  is_scanned boolean [default: false]
+  scanned_at timestamptz
+  verification_status varchar(20) [default: 'pending']
+  created_at timestamptz [default: `now()`]
+  
+  Note: 'Service completion records'
+}
+
+// ========================================
+// 13. ADMIN & AUDIT TABLES
+// ========================================
+
+Table admin_activity_logs {
+  id uuid [pk, default: `gen_random_uuid()`]
+  admin_id uuid [ref: > auth.users.id]
+  action_type varchar(50)
+  target_type varchar(50)
+  target_id uuid
+  action_details jsonb
+  created_at timestamptz [default: `now()`]
+  
+  Note: 'Admin action audit trail'
+}
+
+Table audit_logs {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [ref: > user_profiles.id]
+  role varchar(50)
+  action varchar(100)
+  table_name varchar(100)
+  record_id uuid
+  old_values jsonb
+  new_values jsonb
+  created_at timestamptz [default: `now()`]
+  
+  Indexes {
+    user_id
+    table_name
+  }
+  
+  Note: 'System-wide audit trail'
+}
+
+// ========================================
+// 14. EMAIL & NOTIFICATION TEMPLATES
+// ========================================
+
+Table email_notifications {
+  id uuid [pk, default: `gen_random_uuid()`]
+  recipient_user_id uuid [ref: > auth.users.id]
+  sender_user_id uuid [ref: > auth.users.id]
+  email_type varchar(50)
+  recipient_email varchar(255)
+  subject varchar(255)
+  body text
+  delivery_status varchar(20) [default: 'pending']
+  created_at timestamptz [default: `now()`]
+  
+  Note: 'Email notification records'
+}
+
+Table notification_templates {
+  id uuid [pk, default: `gen_random_uuid()`]
+  category varchar(50)
+  priority varchar(20)
+  title_template text
+  message_template text
+  is_active boolean [default: true]
+  created_at timestamptz [default: `now()`]
+  
+  Note: 'Notification message templates'
+}
+
+// ========================================
+// 15. UTILITY & CONFIGURATION TABLES
+// ========================================
+
+Table app_settings {
+  id uuid [pk, default: `gen_random_uuid()`]
+  key varchar(100) [unique, not null]
+  value text
+  description text
+  is_public boolean [default: false]
+  category varchar(50)
+  updated_at timestamptz [default: `now()`]
+  created_at timestamptz [default: `now()`]
+  
+  Note: 'Application configuration settings'
+}
+
+Table distance_pricing_config {
+  id uuid [pk, default: `gen_random_uuid()`]
+  base_rate_per_km numeric(10,2)
+  minimum_service_fee numeric(10,2)
+  maximum_service_fee numeric(10,2)
+  emergency_multiplier numeric(5,2) [default: 1.5]
+  is_active boolean [default: true]
+  created_at timestamptz [default: `now()`]
+  
+  Note: 'Dynamic pricing configuration'
+}

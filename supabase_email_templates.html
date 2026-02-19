@@ -1,0 +1,783 @@
+<!-- ====================================================================== -->
+<!-- ROADAID SUPABASE EMAIL TEMPLATES -->
+<!-- Copy each template to the corresponding section in Supabase Dashboard -->
+<!-- Authentication > Settings > Email Templates -->
+<!-- ====================================================================== -->
+
+<!-- ====================================================================== -->
+<!-- 1. CONFIRM SIGNUP TEMPLATE -->
+<!-- Go to: Authentication > Email Templates > Confirm signup -->
+<!-- ====================================================================== -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to RoadAid - Confirm Your Account</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #b00c01 0%, #ff6b35 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .welcome-text {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .btn {
+            display: inline-block;
+            background: #b00c01;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+            font-size: 16px;
+        }
+        .btn:hover {
+            background: #8a0901;
+        }
+        .features {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .features h3 {
+            color: #b00c01;
+            margin-top: 0;
+        }
+        .features ul {
+            list-style: none;
+            padding: 0;
+        }
+        .features li {
+            padding: 5px 0;
+            color: #666;
+        }
+        .features li:before {
+            content: "✓ ";
+            color: #b00c01;
+            font-weight: bold;
+        }
+        .footer {
+            background: #333;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+        .footer a {
+            color: #ff6b35;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚗 Welcome to RoadAid!</h1>
+            <p>Your reliable automotive assistance platform</p>
+        </div>
+        
+        <div class="content">
+            <p class="welcome-text">
+                Thank you for joining RoadAid! We're excited to have you as part of our automotive service community.
+            </p>
+            
+            <p>Please confirm your email address to activate your account and start using RoadAid:</p>
+            
+            <div style="text-align: center;">
+                <a href="{{ .ConfirmationURL }}" class="btn">Confirm Your Account</a>
+            </div>
+            
+            <div class="features">
+                <h3>What you can do with RoadAid:</h3>
+                <ul>
+                    <li>Request emergency roadside assistance</li>
+                    <li>Find nearby automotive service providers</li>
+                    <li>Track service requests in real-time</li>
+                    <li>Rate and review service providers</li>
+                    <li>Manage your automotive service history</li>
+                </ul>
+            </div>
+            
+            <p><strong>Need help?</strong> Our support team is here to assist you. Contact us at support@roadaid.com</p>
+            
+            <p style="color: #666; font-size: 14px;">
+                This confirmation link will expire in 24 hours. If you didn't create this account, you can safely ignore this email.
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p>&copy; 2025 RoadAid. All rights reserved.</p>
+            <p>Need assistance? Visit our <a href="#">Help Center</a></p>
+        </div>
+    </div>
+</body>
+</html>
+
+<!-- ====================================================================== -->
+<!-- 2. INVITE USER TEMPLATE -->
+<!-- Go to: Authentication > Email Templates > Invite user -->
+<!-- ====================================================================== -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>You're Invited to Join RoadAid</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #b00c01 0%, #ff6b35 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .invite-text {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .btn {
+            display: inline-block;
+            background: #b00c01;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+            font-size: 16px;
+        }
+        .invitation-info {
+            background: #f0f8ff;
+            padding: 20px;
+            border-left: 4px solid #b00c01;
+            margin: 20px 0;
+        }
+        .footer {
+            background: #333;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+        .footer a {
+            color: #ff6b35;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎉 You're Invited to RoadAid!</h1>
+            <p>Join our automotive service community</p>
+        </div>
+        
+        <div class="content">
+            <p class="invite-text">
+                Great news! You've been invited to join RoadAid, the premier automotive assistance platform.
+            </p>
+            
+            <div class="invitation-info">
+                <h3>🚗 Your RoadAid Invitation</h3>
+                <p><strong>Email:</strong> {{ .Email }}</p>
+                <p><strong>Role:</strong> Service Provider/Customer</p>
+                <p><strong>Invited by:</strong> RoadAid Team</p>
+            </div>
+            
+            <p>Click the button below to accept your invitation and set up your account:</p>
+            
+            <div style="text-align: center;">
+                <a href="{{ .ConfirmationURL }}" class="btn">Accept Invitation & Join RoadAid</a>
+            </div>
+            
+            <p><strong>What happens next?</strong></p>
+            <ul>
+                <li>Set up your secure password</li>
+                <li>Complete your profile</li>
+                <li>Start using RoadAid services immediately</li>
+            </ul>
+            
+            <p style="color: #666; font-size: 14px;">
+                This invitation will expire in 72 hours. If you didn't expect this invitation, you can safely ignore this email.
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p>&copy; 2025 RoadAid. All rights reserved.</p>
+            <p>Questions? Contact us at <a href="mailto:support@roadaid.com">support@roadaid.com</a></p>
+        </div>
+    </div>
+</body>
+</html>
+
+<!-- ====================================================================== -->
+<!-- 3. MAGIC LINK TEMPLATE -->
+<!-- Go to: Authentication > Email Templates > Magic Link -->
+<!-- ====================================================================== -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your RoadAid Magic Login Link</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #b00c01 0%, #ff6b35 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .btn {
+            display: inline-block;
+            background: #b00c01;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+            font-size: 16px;
+        }
+        .security-info {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .footer {
+            background: #333;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 RoadAid Magic Login</h1>
+            <p>Secure, password-free access</p>
+        </div>
+        
+        <div class="content">
+            <p>Hello! You requested a magic login link for your RoadAid account.</p>
+            
+            <p>Click the button below to securely log in to your account:</p>
+            
+            <div style="text-align: center;">
+                <a href="{{ .ConfirmationURL }}" class="btn">🚀 Login to RoadAid</a>
+            </div>
+            
+            <div class="security-info">
+                <strong>🛡️ Security Notice:</strong>
+                <ul>
+                    <li>This link will expire in 1 hour for your security</li>
+                    <li>It can only be used once</li>
+                    <li>If you didn't request this, please ignore this email</li>
+                </ul>
+            </div>
+            
+            <p>For your security, never share this link with anyone. RoadAid will never ask you to forward authentication emails.</p>
+            
+            <p><strong>Need help?</strong> Contact our support team at support@roadaid.com</p>
+        </div>
+        
+        <div class="footer">
+            <p>&copy; 2025 RoadAid. Keeping you secure on the road.</p>
+        </div>
+    </div>
+</body>
+</html>
+
+<!-- ====================================================================== -->
+<!-- 4. CHANGE EMAIL ADDRESS TEMPLATE -->
+<!-- Go to: Authentication > Email Templates > Change Email Address -->
+<!-- ====================================================================== -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm Your New Email Address - RoadAid</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #b00c01 0%, #ff6b35 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .btn {
+            display: inline-block;
+            background: #b00c01;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+            font-size: 16px;
+        }
+        .email-info {
+            background: #e8f4fd;
+            padding: 20px;
+            border-left: 4px solid #b00c01;
+            margin: 20px 0;
+        }
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .footer {
+            background: #333;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📧 Email Address Change</h1>
+            <p>Confirm your new email for RoadAid</p>
+        </div>
+        
+        <div class="content">
+            <p>You've requested to change your email address for your RoadAid account.</p>
+            
+            <div class="email-info">
+                <h3>📋 Email Change Details</h3>
+                <p><strong>New Email:</strong> {{ .Email }}</p>
+                <p><strong>Date:</strong> {{ .DateTime }}</p>
+                <p><strong>Account:</strong> Your RoadAid Account</p>
+            </div>
+            
+            <p>To complete this change, please confirm your new email address:</p>
+            
+            <div style="text-align: center;">
+                <a href="{{ .ConfirmationURL }}" class="btn">✅ Confirm New Email</a>
+            </div>
+            
+            <div class="warning-box">
+                <strong>⚠️ Important:</strong>
+                <ul>
+                    <li>After confirmation, you'll use this new email to log in</li>
+                    <li>All RoadAid notifications will be sent to this new address</li>
+                    <li>This change affects your entire RoadAid account</li>
+                    <li>If you didn't request this change, contact support immediately</li>
+                </ul>
+            </div>
+            
+            <p>This confirmation link will expire in 24 hours for security purposes.</p>
+            
+            <p><strong>Need assistance?</strong> Contact us at support@roadaid.com or call our helpline.</p>
+        </div>
+        
+        <div class="footer">
+            <p>&copy; 2025 RoadAid. Your account security is our priority.</p>
+        </div>
+    </div>
+</body>
+</html>
+
+<!-- ====================================================================== -->
+<!-- 5. RESET PASSWORD TEMPLATE -->
+<!-- Go to: Authentication > Email Templates > Reset Password -->
+<!-- ====================================================================== -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Your RoadAid Password</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #b00c01 0%, #ff6b35 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .btn {
+            display: inline-block;
+            background: #b00c01;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+            font-size: 16px;
+        }
+        .security-tips {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .alert-box {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .footer {
+            background: #333;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔑 Password Reset</h1>
+            <p>Reset your RoadAid account password</p>
+        </div>
+        
+        <div class="content">
+            <p>You've requested to reset your password for your RoadAid account.</p>
+            
+            <p>Click the button below to set a new password:</p>
+            
+            <div style="text-align: center;">
+                <a href="{{ .ConfirmationURL }}" class="btn">🔐 Reset My Password</a>
+            </div>
+            
+            <div class="security-tips">
+                <h3>🛡️ Password Security Tips:</h3>
+                <ul>
+                    <li>Use at least 8 characters with mix of letters, numbers, and symbols</li>
+                    <li>Don't reuse passwords from other accounts</li>
+                    <li>Consider using a password manager</li>
+                    <li>Enable two-factor authentication for extra security</li>
+                </ul>
+            </div>
+            
+            <div class="alert-box">
+                <strong>🚨 Security Alert:</strong>
+                <ul>
+                    <li>This reset link expires in 1 hour</li>
+                    <li>If you didn't request this reset, someone may be trying to access your account</li>
+                    <li>Contact our support team immediately if this wasn't you</li>
+                    <li>Never share this reset link with anyone</li>
+                </ul>
+            </div>
+            
+            <p><strong>Need help?</strong> Our security team is available 24/7 at security@roadaid.com</p>
+        </div>
+        
+        <div class="footer">
+            <p>&copy; 2025 RoadAid. Your security is our top priority.</p>
+            <p>🆘 Emergency Support: 1-800-ROADAID</p>
+        </div>
+    </div>
+</body>
+</html>
+
+<!-- ====================================================================== -->
+<!-- 6. REAUTHENTICATION TEMPLATE -->
+<!-- Go to: Authentication > Email Templates > Reauthentication -->
+<!-- ====================================================================== -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoadAid Security Verification Required</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #b00c01 0%, #ff6b35 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .btn {
+            display: inline-block;
+            background: #b00c01;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+            font-size: 16px;
+        }
+        .security-notice {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .action-info {
+            background: #e8f4fd;
+            padding: 20px;
+            border-left: 4px solid #b00c01;
+            margin: 20px 0;
+        }
+        .footer {
+            background: #333;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Security Verification</h1>
+            <p>Additional authentication required</p>
+        </div>
+        
+        <div class="content">
+            <p>For your security, RoadAid requires additional verification to complete your current action.</p>
+            
+            <div class="action-info">
+                <h3>🔍 Verification Details</h3>
+                <p><strong>Account:</strong> {{ .Email }}</p>
+                <p><strong>Action:</strong> Sensitive account operation</p>
+                <p><strong>Time:</strong> {{ .DateTime }}</p>
+                <p><strong>Location:</strong> Current session</p>
+            </div>
+            
+            <p>Click the button below to verify your identity and proceed:</p>
+            
+            <div style="text-align: center;">
+                <a href="{{ .ConfirmationURL }}" class="btn">🛡️ Verify My Identity</a>
+            </div>
+            
+            <div class="security-notice">
+                <strong>🔒 Why do we require this?</strong>
+                <ul>
+                    <li>To protect your RoadAid account from unauthorized access</li>
+                    <li>To ensure sensitive operations are performed by the account owner</li>
+                    <li>To comply with security best practices</li>
+                    <li>To maintain the highest level of data protection</li>
+                </ul>
+            </div>
+            
+            <p><strong>Security reminders:</strong></p>
+            <ul>
+                <li>This verification link expires in 15 minutes</li>
+                <li>Only use this link if you initiated the action</li>
+                <li>Never share verification links with anyone</li>
+                <li>Contact support if you see unexpected verification requests</li>
+            </ul>
+            
+            <p>If you didn't initiate this action, please contact our security team immediately.</p>
+        </div>
+        
+        <div class="footer">
+            <p>&copy; 2025 RoadAid. Protecting your journey with advanced security.</p>
+            <p>🚨 Security Concerns? Call: 1-800-ROADAID-SEC</p>
+        </div>
+    </div>
+</body>
+</html>
+
+<!-- ====================================================================== -->
+<!-- IMPLEMENTATION INSTRUCTIONS -->
+<!-- ====================================================================== -->
+
+<!--
+TO IMPLEMENT THESE TEMPLATES IN SUPABASE:
+
+1. Go to your Supabase Dashboard
+2. Navigate to Authentication > Settings > Email Templates
+3. For each template type (Confirm signup, Invite user, etc.):
+   - Copy the corresponding HTML code above
+   - Paste it into the respective template editor
+   - Save the changes
+
+TEMPLATE VARIABLES:
+- {{ .ConfirmationURL }} - The action URL (login, confirm, reset, etc.)
+- {{ .Email }} - User's email address
+- {{ .DateTime }} - Current date and time
+- These are automatically populated by Supabase
+
+CUSTOMIZATION:
+- Update colors, fonts, and styling to match your brand
+- Modify text content as needed
+- Add your actual support email and contact information
+- Replace placeholder links with real ones
+
+TESTING:
+- Use Supabase's email testing feature to preview templates
+- Test with different email clients
+- Verify all links work correctly
+- Check mobile responsiveness
+-->
